@@ -296,19 +296,19 @@ class BeaconServer(SCIONElement, metaclass=ABCMeta):
         For every verified pcb received from the network or ZK
         this function gets called to continue the processing for the pcb.
         """
-        pseg = seg_meta.seg
-        logging.debug("Successfully verified PCB %s", pseg.short_id())
+        pcb = seg_meta.seg
+        logging.debug("Successfully verified PCB %s", pcb.short_id())
         if seg_meta.meta:
             # Segment was received from network, not from zk. Share segment
             # with other beacon servers in this AS.
-            entry_name = "%s-%s" % (pseg.get_hops_hash(hex=True), time.time())
+            entry_name = "%s-%s" % (pcb.get_hops_hash(hex=True), time.time())
             try:
                 self.pcb_cache.store(entry_name, pcb.copy().pack())
             except ZkNoConnection:
                 logging.error("Unable to store PCB in shared cache: "
                               "no connection to ZK")
-        self.handle_ext(pseg)
-        self._handle_verified_beacon(pseg)
+        self.handle_ext(pcb)
+        self._handle_verified_beacon(pcb)
 
     def _filter_pcb(self, pcb, dst_ia=None):
         return True
@@ -318,6 +318,8 @@ class BeaconServer(SCIONElement, metaclass=ABCMeta):
         Handle beacon extensions.
         """
         # Handle PCB extensions
+        if pcb.is_sibra():
+            logging.debug("%s", pcb.sibra_ext)
         for asm in pcb.iter_asms():
             pol = asm.routing_pol_ext()
             if pol:
@@ -579,7 +581,7 @@ class BeaconServer(SCIONElement, metaclass=ABCMeta):
                     rev_info = RevocationInfo.from_raw(raw)
                 except SCIONParseError as e:
                     logging.error(
-                        "Error parsing revocation info from ZK: %s", e)
+                        "Error processing revocation info from ZK: %s", e)
                     continue
                 try:
                     rev_info.validate()
@@ -637,12 +639,11 @@ class BeaconServer(SCIONElement, metaclass=ABCMeta):
         pmgt = cpld.union
         rev_info = pmgt.union
         assert isinstance(rev_info, RevocationInfo), type(rev_info)
-        logging.debug("Received revocation via CtrlPld: %s (from %s)", rev_info.short_desc(), meta)
+        logging.debug("Received revocation via TCP/UDP: %s (from %s)", rev_info.short_desc(), meta)
         try:
             rev_info.validate()
         except SCIONBaseError as e:
-            logging.warning("Failed to validate CtrlPld RevInfo from %s: %s\n%s",
-                            meta, e, rev_info.short_desc())
+            logging.warning("Failed to validate RevInfo from %s: %s", meta, e)
             return
         self._process_revocation(rev_info)
 
