@@ -18,10 +18,12 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	log "github.com/inconshreveable/log15"
@@ -30,12 +32,15 @@ import (
 
 	"github.com/scionproto/scion/go/lib/addr"
 	liblog "github.com/scionproto/scion/go/lib/log"
+	"github.com/scionproto/scion/go/lib/pathmgr"
+	sd "github.com/scionproto/scion/go/lib/sciond"
 	"github.com/scionproto/scion/go/lib/snet"
 	"github.com/scionproto/scion/go/lib/snet/squic"
+	"github.com/scionproto/scion/go/lib/spath"
 )
 
 const (
-	DefaultInterval = 2 * time.Second
+	DefaultInterval = 1 * time.Second
 	DefaultTimeout  = 2 * time.Second
 	MaxPings        = 1 << 16
 	ReqMsg          = "ping!"
@@ -47,12 +52,13 @@ func GetDefaultSCIONDPath(ia *addr.ISD_AS) string {
 }
 
 var (
-	local      snet.Addr
-	remote     snet.Addr
-	id         = flag.String("id", "pingpong", "Element ID")
-	mode       = flag.String("mode", "client", "Run in client or server mode")
-	sciond     = flag.String("sciond", "", "Path to sciond socket")
-	dispatcher = flag.String("dispatcher", "/run/shm/dispatcher/default.sock",
+	local       snet.Addr
+	remote      snet.Addr
+	interactive = flag.Bool("i", false, "Interactive mode")
+	id          = flag.String("id", "pingpong", "Element ID")
+	mode        = flag.String("mode", "client", "Run in client or server mode")
+	sciond      = flag.String("sciond", "", "Path to sciond socket")
+	dispatcher  = flag.String("dispatcher", "/run/shm/dispatcher/default.sock",
 		"Path to dispatcher socket")
 	count = flag.Int("count", 0,
 		fmt.Sprintf("Number of pings, between 0 and %d; a count of 0 means infinity", MaxPings))
@@ -104,6 +110,19 @@ func validateFlags() {
 func Client() {
 	initNetwork()
 
+	// Needs to happen before DialSCION, as it will 'copy' the remote to the connection.
+	// If remote is not in local AS, we need a path!
+	if !remote.IA.Eq(local.IA) {
+		pathEntry := choosePath(*interactive)
+		if pathEntry == nil {
+			LogFatal("No paths available to remote destination")
+		}
+		remote.Path = spath.New(pathEntry.Path.FwdPath)
+		remote.Path.InitOffsets()
+		remote.NextHopHost = pathEntry.HostInfo.Host()
+		remote.NextHopPort = pathEntry.HostInfo.Port
+	}
+
 	// Connect to remote address. Note that currently the SCION library
 	// does not support automatic binding to local addresses, so the local
 	// IP address needs to be supplied explicitly. When supplied a local
@@ -113,6 +132,7 @@ func Client() {
 		LogFatal("Unable to dial", "err", err)
 	}
 	defer qsess.Close(nil)
+
 	qstream, err := qsess.OpenStreamSync()
 	if err != nil {
 		LogFatal("quic OpenStream failed", "err", err)
@@ -258,4 +278,39 @@ func (a *Address) Set(s string) error {
 func LogFatal(msg string, a ...interface{}) {
 	log.Crit(msg, a...)
 	os.Exit(1)
+}
+
+func choosePath(interactive bool) *sd.PathReplyEntry {
+	pathMgr := snet.DefNetwork.PathResolver()
+	pathSet := pathMgr.Query(local.IA, remote.IA)
+	pathIndeces := make(map[uint64]pathmgr.PathKey)
+	pathIndex := uint64(0)
+	i := uint64(0)
+
+	if len(pathSet) == 0 {
+		return nil
+	}
+	for k := range pathSet {
+		pathIndeces[i] = k
+		i++
+	}
+	if interactive {
+		fmt.Printf("Available paths to %v\n", remote.IA)
+		for i := range pathIndeces {
+			fmt.Printf("[%2d] %s\n", i, pathSet[pathIndeces[i]].Entry.Path.String())
+		}
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			fmt.Printf("Choose path: ")
+			pathIndexStr, _ := reader.ReadString('\n')
+			var err error
+			pathIndex, err = strconv.ParseUint(pathIndexStr[:len(pathIndexStr)-1], 10, 64)
+			if err == nil && pathIndex < i {
+				break
+			}
+			fmt.Printf("ERROR: Invalid path index, valid indices range: [0, %v]\n", i-1)
+		}
+	}
+	fmt.Printf("Using path:\n  %s\n", pathSet[pathIndeces[pathIndex]].Entry.Path.String())
+	return pathSet[pathIndeces[pathIndex]].Entry
 }
