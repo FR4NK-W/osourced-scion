@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build ignore
-
 // Simple application for SCION connectivity using the snet library.
 package main
 
@@ -27,13 +25,12 @@ import (
 	"time"
 
 	log "github.com/inconshreveable/log15"
-	//"github.com/lucas-clemente/quic-go"
-	//"github.com/lucas-clemente/quic-go/qerr"
+	"github.com/lucas-clemente/quic-go"
+	"github.com/lucas-clemente/quic-go/qerr"
 
 	"github.com/scionproto/scion/go/lib/addr"
 	liblog "github.com/scionproto/scion/go/lib/log"
 	"github.com/scionproto/scion/go/lib/pathmgr"
-	sd "github.com/scionproto/scion/go/lib/sciond"
 	"github.com/scionproto/scion/go/lib/snet"
 	"github.com/scionproto/scion/go/lib/snet/squic"
 	"github.com/scionproto/scion/go/lib/spath"
@@ -150,11 +147,11 @@ func Client() {
 		before := time.Now()
 		written, err := qstream.Write([]byte(ReqMsg))
 		if err != nil {
-			//qer := qerr.ToQuicError(err)
-			//if qer.ErrorCode == qerr.NetworkIdleTimeout {
-			//	log.Debug("The connection timed out due to no network activity")
-			//	break
-			//}
+			qer := qerr.ToQuicError(err)
+			if qer.ErrorCode == qerr.NetworkIdleTimeout {
+				log.Debug("The connection timed out due to no network activity")
+				break
+			}
 			log.Error("Unable to write", "err", err)
 			continue
 		}
@@ -171,11 +168,11 @@ func Client() {
 		}
 		read, err := qstream.Read(b)
 		if err != nil {
-			//qer := qerr.ToQuicError(err)
-			//if qer.ErrorCode == qerr.PeerGoingAway {
-			//	log.Debug("Quic peer disconnected")
-			//	break
-			//}
+			qer := qerr.ToQuicError(err)
+			if qer.ErrorCode == qerr.PeerGoingAway {
+				log.Debug("Quic peer disconnected")
+				break
+			}
 			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 				log.Debug("ReadDeadline missed", "err", err)
 				continue
@@ -226,7 +223,7 @@ func initNetwork() {
 	log.Debug("QUIC/SCION successfully initialized")
 }
 
-func handleClient( /*qsess quic.Session*/ ) {
+func handleClient(qsess quic.Session) {
 	qstream, err := qsess.AcceptStream()
 	if err != nil {
 		LogFatal("Unable to accept quic stream", "err", err)
@@ -237,11 +234,11 @@ func handleClient( /*qsess quic.Session*/ ) {
 		// Receive ping message
 		read, err := qstream.Read(b)
 		if err != nil {
-			//qer := qerr.ToQuicError(err)
-			//if qer.ErrorCode == qerr.PeerGoingAway {
-			//	log.Debug("Quic peer disconnected")
-			//	break
-			//}
+			qer := qerr.ToQuicError(err)
+			if qer.ErrorCode == qerr.PeerGoingAway {
+				log.Debug("Quic peer disconnected")
+				break
+			}
 			log.Error("Unable to read", "err", err)
 			break
 		}
@@ -283,34 +280,35 @@ func LogFatal(msg string, a ...interface{}) {
 func choosePath(interactive bool) *sd.PathReplyEntry {
 	pathMgr := snet.DefNetwork.PathResolver()
 	pathSet := pathMgr.Query(local.IA, remote.IA)
-	pathIndeces := make(map[uint64]pathmgr.PathKey)
+	pathIndices := make(map[uint64]pathmgr.PathKey)
 	pathIndex := uint64(0)
 	i := uint64(0)
 
 	if len(pathSet) == 0 {
 		return nil
 	}
-	for k := range pathSet {
-		pathIndeces[i] = k
+
+	fmt.Printf("Available paths to %v\n", remote.IA)
+	for k, path := range pathSet {
+		pathIndices[i] = k
+		fmt.Printf("[%2d] %s\n", i, path.Entry.Path.String())
 		i++
 	}
+
 	if interactive {
-		fmt.Printf("Available paths to %v\n", remote.IA)
-		for i := range pathIndeces {
-			fmt.Printf("[%2d] %s\n", i, pathSet[pathIndeces[i]].Entry.Path.String())
-		}
 		reader := bufio.NewReader(os.Stdin)
 		for {
 			fmt.Printf("Choose path: ")
 			pathIndexStr, _ := reader.ReadString('\n')
-			var err error
-			pathIndex, err = strconv.ParseUint(pathIndexStr[:len(pathIndexStr)-1], 10, 64)
-			if err == nil && pathIndex < i {
+			pathIndex, err := strconv.ParseUint(pathIndexStr[:len(pathIndexStr)-1], 10, 64)
+			if err == nil && pathIndex < uint64(len(pathIndices)) {
 				break
 			}
 			fmt.Printf("ERROR: Invalid path index, valid indices range: [0, %v]\n", i-1)
 		}
 	}
-	fmt.Printf("Using path:\n  %s\n", pathSet[pathIndeces[pathIndex]].Entry.Path.String())
-	return pathSet[pathIndeces[pathIndex]].Entry
+	pathKey := pathIndices[pathIndex]
+	entry := pathSet[pathKey].Entry
+	fmt.Printf("Using path:\n  %s\n", entry.Path.String())
+	return entry
 }
