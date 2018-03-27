@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build ignore
-
 // Simple application for SCION connectivity using the snet library.
 package main
 
@@ -27,8 +25,8 @@ import (
 	"time"
 
 	log "github.com/inconshreveable/log15"
-	//"github.com/lucas-clemente/quic-go"
-	//"github.com/lucas-clemente/quic-go/qerr"
+	"github.com/lucas-clemente/quic-go"
+	"github.com/lucas-clemente/quic-go/qerr"
 
 	"github.com/scionproto/scion/go/lib/addr"
 	liblog "github.com/scionproto/scion/go/lib/log"
@@ -63,7 +61,9 @@ var (
 		fmt.Sprintf("Number of pings, between 0 and %d; a count of 0 means infinity", MaxPings))
 	timeout = flag.Duration("timeout", DefaultTimeout,
 		"Timeout for the ping response")
-	interval = flag.Duration("interval", DefaultInterval, "time between pings")
+	interval     = flag.Duration("interval", DefaultInterval, "time between pings")
+	formatString = flag.String("format", "", "Format string use to format output, e.g. \"%[9]s : %3.3[5]s\"")
+	aggregate = flag.Bool("aggregate", false, "Aggregate output only at end of run")
 )
 
 func init() {
@@ -146,6 +146,8 @@ func Client() {
 	log.Debug("Quic stream opened", "local", &local, "remote", &remote)
 
 	b := make([]byte, 1<<12)
+	var RTTs []time.Duration
+	readTotal := 0
 	for i := 0; i < *count || *count == 0; i++ {
 		if i != 0 && *interval != 0 {
 			time.Sleep(*interval)
@@ -155,11 +157,11 @@ func Client() {
 		before := time.Now()
 		written, err := qstream.Write([]byte(ReqMsg))
 		if err != nil {
-			//qer := qerr.ToQuicError(err)
-			//if qer.ErrorCode == qerr.NetworkIdleTimeout {
-			//	log.Debug("The connection timed out due to no network activity")
-			//	break
-			//}
+			qer := qerr.ToQuicError(err)
+			if qer.ErrorCode == qerr.NetworkIdleTimeout {
+				log.Debug("The connection timed out due to no network activity")
+				break
+			}
 			log.Error("Unable to write", "err", err)
 			continue
 		}
@@ -176,11 +178,11 @@ func Client() {
 		}
 		read, err := qstream.Read(b)
 		if err != nil {
-			//qer := qerr.ToQuicError(err)
-			//if qer.ErrorCode == qerr.PeerGoingAway {
-			//	log.Debug("Quic peer disconnected")
-			//	break
-			//}
+			qer := qerr.ToQuicError(err)
+			if qer.ErrorCode == qerr.PeerGoingAway {
+				log.Debug("Quic peer disconnected")
+				break
+			}
 			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 				log.Debug("ReadDeadline missed", "err", err)
 				continue
@@ -194,7 +196,23 @@ func Client() {
 		}
 		after := time.Now()
 		elapsed := after.Sub(before)
-		fmt.Printf("%d bytes from %v: seq=%d time=%s\n", read, &remote, i, elapsed)
+		RTTs = append(RTTs, elapsed)
+		readTotal += read
+		if *aggregate && i == *count-1 {
+			//RTTsString := fmt.Sprintf("%3.3s", RTTs)
+			var RTTsMs []float64 // RTTs in ms
+			for _, RTT := range RTTs {
+				RTTsMs = append(RTTsMs, float64(RTT.Round(time.Nanosecond))/1e6)
+			}
+			RTTsString := fmt.Sprintf("%.2f", RTTsMs)
+			RTTsString = RTTsString[1:len(RTTsString)-1]
+			fmt.Printf(*formatString+"\n", after.Unix(), readTotal, &remote, i, RTTsString, local.Host, remote.Host, timeout, interval)
+		}
+		if !*aggregate && *formatString != "" {
+			fmt.Printf(*formatString+"\n", before.Unix(), read, &remote, i, elapsed, before, after, local.Host, remote.Host, timeout, interval)
+		} else if !*aggregate {
+			fmt.Printf("[%v] Received %d bytes from %v: seq=%d RTT=%s\n", before.Unix(), read, &remote, i, elapsed)
+		}
 	}
 }
 
@@ -231,7 +249,7 @@ func initNetwork() {
 	log.Debug("QUIC/SCION successfully initialized")
 }
 
-func handleClient( /*qsess quic.Session*/ ) {
+func handleClient( qsess quic.Session ) {
 	qstream, err := qsess.AcceptStream()
 	if err != nil {
 		LogFatal("Unable to accept quic stream", "err", err)
@@ -242,11 +260,11 @@ func handleClient( /*qsess quic.Session*/ ) {
 		// Receive ping message
 		read, err := qstream.Read(b)
 		if err != nil {
-			//qer := qerr.ToQuicError(err)
-			//if qer.ErrorCode == qerr.PeerGoingAway {
-			//	log.Debug("Quic peer disconnected")
-			//	break
-			//}
+			qer := qerr.ToQuicError(err)
+			if qer.ErrorCode == qerr.PeerGoingAway {
+				log.Debug("Quic peer disconnected")
+				break
+			}
 			log.Error("Unable to read", "err", err)
 			break
 		}
