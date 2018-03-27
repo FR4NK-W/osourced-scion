@@ -46,6 +46,7 @@ vendor/.deps.stamp: vendor/vendor.json
 	    govendor remove "$$pkg"; \
 	done
 	@[ -z "${QUIET}" ] && echo "$$(date -Iseconds) Syncing deps"; govendor sync -v
+	grep clipperhouse -l -s -r ./vendor/github.com/lucas-clemente/ | uniq | xargs sed -i -e "s/_/\/\/_/g"
 	@[ -z "${QUIET}" ] && echo "$$(date -Iseconds) Installing deps"; go install ./vendor/...
 	@if [ -n "$$(govendor list -no-status +outside | grep -v '^context$$')" ]; then \
 	    echo "ERROR: external/missing packages:"; \
