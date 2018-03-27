@@ -65,6 +65,9 @@ var (
 		"Timeout for the ping response")
 	interval = flag.Duration("interval", DefaultInterval, "time between pings")
 	verbose  = flag.Bool("v", false, "sets verbose output")
+	formatString = flag.String("format", "",
+		"Format string use to format output, e.g. \"%[9]s : %3.3[5]s\"")
+	aggregate    = flag.Bool("aggregate", false, "Aggregate output only at end of run")
 )
 
 func init() {
@@ -188,6 +191,8 @@ func Read(qstream quic.Stream) {
 	// Receive pong message (with final timeout)
 	b := make([]byte, 1<<12)
 	replyMsgLen := len(ReplyMsg)
+	var RTTs []time.Duration
+	readTotal := 0
 	for i := 0; i < *count || *count == 0; i++ {
 		read, err := qstream.Read(b)
 		after := time.Now()
@@ -218,12 +223,28 @@ func Read(qstream quic.Stream) {
 		}
 		before := time.Unix(0, int64(common.Order.Uint64(b[replyMsgLen:replyMsgLen+TSLen])))
 		elapsed := after.Sub(before)
-		if *verbose {
-			fmt.Printf("[%s]\tReceived %d bytes from %v: seq=%d RTT=%s\n",
-				before.Unix(), read, &remote, i, elapsed)
-		} else {
-			fmt.Printf("Received %d bytes from %v: seq=%d RTT=%s\n",
-				read, &remote, i, elapsed)
+		RTTs = append(RTTs, elapsed)
+		readTotal += read
+		if !*aggregate {
+			if *verbose {
+				fmt.Printf("[%d]\t", before.Unix())
+			}
+			if *formatString != "" {
+				fmt.Printf(*formatString+"\n",
+					before.Unix(), read, &remote, i, elapsed, before, after, local.Host, remote.Host, timeout, interval)
+			} else {
+				fmt.Printf("Received %d bytes from %v: seq=%d RTT=%s\n",
+					read, &remote, i, elapsed)
+			}
+		} else if i == *count-1 {
+			var RTTsMs []float64 // RTTs in ms
+			for _, RTT := range RTTs {
+				RTTsMs = append(RTTsMs, float64(RTT.Round(time.Nanosecond))/1e6)
+			}
+			RTTsString := fmt.Sprintf("%.2f", RTTsMs)
+			RTTsString = RTTsString[1 : len(RTTsString)-1]
+			fmt.Printf(*formatString+"\n", after.Unix(), readTotal,
+				&remote, i, RTTsString, local.Host, remote.Host, timeout, interval)
 		}
 	}
 }
@@ -290,7 +311,7 @@ func handleClient(qsess quic.Session) {
 				"actual", string(b[:reqMsgLen]), "full", string(b[:read]))
 		}
 		// extract timestamp
-		ts := common.Order.PutUint64(b[reqMsgLen:])
+		ts := common.Order.Uint64(b[reqMsgLen:])
 
 		// Send pong message
 		replyMsgLen := len(ReplyMsg)
