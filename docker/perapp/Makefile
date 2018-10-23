@@ -6,6 +6,11 @@ endif
 ALL_TARGETS = base apps debug
 .PHONY: $(ALL_TARGETS)
 all: $(ALL_TARGETS)
+
+SCIONLAB_TARGETS = base scionlab_apps debug
+.PHONY: $(SCIONLAB_TARGETS)
+all_scionlab: $(SCIONLAB_TARGETS)
+
 hashes/scion: ../_build/scion.stamp
 	./docker_hash scion
 
@@ -42,6 +47,11 @@ hashes/debug_base: base/Dockerfile.debug hashes/scion
 APP_TARGETS = border dispatcher sig path_py path beacon_py cert_py sciond_py sciond
 .PHONY: $(APP_TARGETS)
 apps: $(APP_TARGETS)
+
+# SCIONLab app images
+SCIONLAB_APP_TARGETS = border dispatcher sig path_py beacon_py cert_py sciond_py
+.PHONY: $(SCIONLAB_APP_TARGETS)
+scionlab_apps: $(SCIONLAB_APP_TARGETS)
 
 border: hashes/border
 hashes/border: app/Dockerfile.border hashes/app_base hashes/app_builder

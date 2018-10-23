@@ -6,9 +6,10 @@ Per-application Docker images for SCION
 
 -   Build base images {app, base, python, debug}: `make base`
 -   Build app images: `make apps`
+-   Build only scionlab images: `make scionlab_apps`
 -   Build debug images: `make debug`
 
-Build all images: `make all`, specific image: `make border` or specific debug image:
+Build all images: `make all`, all SCIONLab images: `make all_scionlab`, specific image: `make border` or specific debug image:
 `make border_debug`
 
 ### Base Images

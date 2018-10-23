@@ -2,7 +2,7 @@
 
 set -ex
 
-REMOTE="scionproto"
+REMOTE="netsec-scion"
 
 echo "Tag: ${1:-}"
 
