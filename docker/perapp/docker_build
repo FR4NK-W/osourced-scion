@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 target="$(basename ${1:?})"
 shift
