@@ -1,3 +1,4 @@
+# USER_ISD_ID=17 USER_AS_ID=ffaa_1_133 docker-compose -f docker-compose_MIN.yml up
 version: "3"
 services:
   zookeeper:
@@ -39,9 +40,9 @@ services:
     volumes:
       - "/etc/passwd:/etc/passwd:ro"
       - "/etc/group:/etc/group:ro"
-      - "../gen/ISD1/ASff00_0_110/br1-ff00_0_110-1:/share/conf"
+      - "../gen/ISD${USER_ISD_ID}/AS${USER_AS_ID}/br${USER_ISD_ID}-${USER_AS_ID}-1:/share/conf"
       - "../logs:/share/logs"
-    command: ["-id=br1-ff00_0_110-1", "-prom=[127.0.0.49]:30093"]
+    command: ["-id=br${USER_ISD_ID}-${USER_AS_ID}-1", "-prom=[127.0.0.49]:30093"]
 #  sig:
 #    image: scion_sig
 #    network_mode: "host"
@@ -67,10 +68,10 @@ services:
       - "/etc/group:/etc/group:ro"
       - "/run/shm/dispatcher:/run/shm/dispatcher"
       - "/run/shm/sciond:/run/shm/sciond"
-      - "../gen/ISD1/ASff00_0_110/endhost:/share/conf:ro"
+      - "../gen/ISD${USER_ISD_ID}/AS${USER_AS_ID}/endhost:/share/conf:ro"
       - "../gen-cache:/share/gen-cache:ro"
       - "../logs:/share/logs"
-    command: ["--api-addr", "/run/shm/sciond/sd1-ff00_0_110.sock", "--log_dir=/share/logs", "sd1-ff00_0_110", "conf"]
+    command: ["--api-addr", "/run/shm/sciond/sd${USER_ISD_ID}-${USER_AS_ID}.sock", "--log_dir=/share/logs", "sd${USER_ISD_ID}-${USER_AS_ID}", "conf"]
   path_py:
     image: scion_path_py
     depends_on:
@@ -85,10 +86,10 @@ services:
       - "/etc/group:/etc/group:ro"
       - "/run/shm/dispatcher:/run/shm/dispatcher"
       - "/run/shm/sciond:/run/shm/sciond"
-      - "../gen/ISD1/ASff00_0_110/ps1-ff00_0_110-1:/share/conf:ro"
+      - "../gen/ISD${USER_ISD_ID}/AS${USER_AS_ID}/ps${USER_ISD_ID}-${USER_AS_ID}-1:/share/conf:ro"
       - "../gen-cache:/share/gen-cache:ro"
       - "../logs:/share/logs"
-    command: ["--prom", "[127.0.0.55]:30080", "ps1-ff00_0_110-1", "conf"]
+    command: ["--prom", "[127.0.0.55]:30080", "ps${USER_ISD_ID}-${USER_AS_ID}-1", "conf"]
   beacon:
     image: scion_beacon_py
     depends_on:
@@ -103,10 +104,10 @@ services:
       - "/etc/group:/etc/group:ro"
       - "/run/shm/dispatcher:/run/shm/dispatcher"
       - "/run/shm/sciond:/run/shm/sciond"
-      - "../gen/ISD1/ASff00_0_110/bs1-ff00_0_110-1:/share/conf:ro"
+      - "../gen/ISD${USER_ISD_ID}/AS${USER_AS_ID}/bs${USER_ISD_ID}-${USER_AS_ID}-1:/share/conf:ro"
       - "../gen-cache:/share/gen-cache:ro"
       - "../logs:/share/logs"
-    command: ["--prom", "[127.0.0.53]:30092", "bs1-ff00_0_110-1", "conf"]
+    command: ["--prom", "[127.0.0.53]:30092", "bs${USER_ISD_ID}-${USER_AS_ID}-1", "conf"]
   cert:
     image: scion_cert
     depends_on:
@@ -120,7 +121,7 @@ services:
       - "/etc/group:/etc/group:ro"
       - "/run/shm/dispatcher:/run/shm/dispatcher"
       - "/run/shm/sciond:/run/shm/sciond"
-      - "../gen/ISD1/ASff00_0_110/cs1-ff00_0_110-1:/share/conf"
+      - "../gen/ISD${USER_ISD_ID}/AS${USER_AS_ID}/cs${USER_ISD_ID}-${USER_AS_ID}-1:/share/conf"
       - "../gen-cache:/share/gen-cache:ro"
       - "../logs:/share/logs"
-    command: ["-prom", "[127.0.0.54]:30082", "-id", "cs1-ff00_0_110-1", "-confd", "conf", "-sciond", "/run/shm/sciond/sd1-ff00_0_110.sock", "-cached", "/share/gen-cache"]
+    command: ["-prom", "[127.0.0.54]:30082", "-id", "cs${USER_ISD_ID}-${USER_AS_ID}-1", "-confd", "conf", "-sciond", "/run/shm/sciond/sd${USER_ISD_ID}-${USER_AS_ID}.sock", "-cached", "/share/gen-cache"]

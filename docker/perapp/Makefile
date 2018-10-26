@@ -58,7 +58,7 @@ hashes/border: app/Dockerfile.border hashes/app_base hashes/app_builder
 	DOCKER_ARGS="$(DOCKER_ARGS)" ./docker_build $@ $<
 
 cert: hashes/cert hashes/app_base hashes/app_builder
-hashes/cert: app/Dockerfile.cert 
+hashes/cert: app/Dockerfile.cert
 	DOCKER_ARGS="$(DOCKER_ARGS)" ./docker_build $@ $<
 
 dispatcher: hashes/dispatcher
