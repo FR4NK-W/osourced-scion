@@ -49,12 +49,16 @@ APP_TARGETS = border dispatcher sig path_py path beacon_py cert_py sciond_py sci
 apps: $(APP_TARGETS)
 
 # SCIONLab app images
-SCIONLAB_APP_TARGETS = border dispatcher sig path_py beacon_py cert_py sciond_py
+SCIONLAB_APP_TARGETS = border cert dispatcher sig path_py beacon_py sciond_py
 .PHONY: $(SCIONLAB_APP_TARGETS)
 scionlab_apps: $(SCIONLAB_APP_TARGETS)
 
 border: hashes/border
 hashes/border: app/Dockerfile.border hashes/app_base hashes/app_builder
+	DOCKER_ARGS="$(DOCKER_ARGS)" ./docker_build $@ $<
+
+cert: hashes/cert hashes/app_base hashes/app_builder
+hashes/cert: app/Dockerfile.cert 
 	DOCKER_ARGS="$(DOCKER_ARGS)" ./docker_build $@ $<
 
 dispatcher: hashes/dispatcher
