@@ -1,8 +1,9 @@
-# USER_ISD_ID=17 USER_AS_ID=ffaa_1_133 docker-compose -f docker-compose_MIN.yml up
+# USER_ISD_ID=17 USER_AS_ID=ffaa_1_xxx docker-compose -f docker-compose_MIN.yml up; find /run/shm/dispatcher /run/shm/sciond -type s -print0 | xargs -r0 rm -v
 version: "3"
 services:
   zookeeper:
     image: zookeeper:latest
+    network_mode: "host"
     restart: always
     environment:
       ZOO_USER: "$LOGNAME"
@@ -26,12 +27,6 @@ services:
       - "/run/shm/dispatcher:/run/shm/dispatcher"
       - "../gen/dispatcher:/share/conf"
       - "../logs:/share/logs"
-      - "/bin/bash:/bin/bash:ro"
-      - "/bin/sh:/bin/sh:ro"
-      - "/lib:/lib:ro"
-      - "/sbin/ldconfig:/sbin/ldconfig:ro"
-      - "/sbin/ldconfig.real:/sbin/ldconfig.real:ro"
-      - "/usr/local/lib/libzlog.so.1.1:/usr/local/lib/libzlog.so.1.1:ro"
   border:
     image: scion_border
     network_mode: "host"
