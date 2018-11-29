@@ -1,0 +1,64 @@
+# GEN_FOLDER="../gen" && echo -e "\nPlease make sure that GEN_FOLDER=${GEN_FOLDER} is the location of you gen folder.\n" && ls ${GEN_FOLDER} 1>/dev/null && mkdir -p ../logs/beacon ../logs/border ../logs/cert ../logs/path ../logs/sig ../gen-cache && GEN_FOLDER=${GEN_FOLDER} USER_ISD_ID=$(cat ${GEN_FOLDER}/ia | awk '{split($0, out, "-"); print out[1]}') USER_AS_ID=$(cat ${GEN_FOLDER}/ia | awk '{split($0, out, "-"); print out[2]}') USER_AS_ID_HX=$(cat ${GEN_FOLDER}/ia | awk '{split($0, out, "-"); print out[2]}' | sed 's/_/:/g') docker-compose -f docker-compose_selfcontained.yml up
+# e.g.: GEN_FOLDER="../gen" USER_ISD_ID=17 USER_AS_ID=ffaa_1_133 USER_AS_ID_HX=ffaa:1:133 docker-compose -f docker-compose_selfcontained.yml up
+version: "3"
+services:
+  border:
+    image: scionlab/scion_border:selfcontained
+    network_mode: "host"
+    environment:
+      SU_EXEC_USERSPEC: "scion"
+    volumes:
+      - "${GEN_FOLDER}/ISD${USER_ISD_ID}/AS${USER_AS_ID}/br${USER_ISD_ID}-${USER_AS_ID}-1:/share/conf"
+      - "../logs/border:/share/logs"
+    command: ["-id=br${USER_ISD_ID}-${USER_AS_ID}-1"]
+#  sig:
+#    entrypoint: /bin/bash -c "cd /zookeeper-3.4.13/bin; /sbin/su-exec /docker-entrypoint.sh ./zkServer.sh start /conf/zoo.cfg & cd /share; /sbin/su-exec /app/dispatcher & /sbin/su-exec /app/bin/sciond --api-addr /run/shm/sciond/sd${USER_ISD_ID}-${USER_AS_ID}.sock --log_dir=/share/logs sd${USER_ISD_ID}-${USER_AS_ID} conf & /sbin/su-exec /app/sig -id=sig1 -config=/share/sig/sig.json -log.dir=logs -log.level=debug -ip=127.0.0.1 -ia=${USER_ISD_ID}-${USER_AS_ID_HX} -sciond=/run/shm/sciond/sd${USER_ISD_ID}-${USER_AS_ID}.sock
+#    image: scionlab/scion_sig:selfcontained
+#    network_mode: "host"
+#    restart: on-failure # FIXME(worxli) #1621: Restarts the SIG when SCIOND was too slow
+#    cap_add:
+#      - NET_ADMIN
+#    environment:
+#      SU_EXEC_USERSPEC: "scion"
+#    volumes:
+#      - "/dev/net/tun:/dev/net/tun"
+#      - "${GEN_FOLDER}/ISD${USER_ISD_ID}/AS${USER_AS_ID}/sig${USER_ISD_ID}-${USER_AS_ID}-1:/share/sig"
+#      - "../logs/sig:/share/logs"
+  path:
+    image: scionlab/scion_path_py:selfcontained
+    entrypoint: /bin/bash -c "cd /zookeeper-3.4.13/bin; /sbin/su-exec /docker-entrypoint.sh ./zkServer.sh start /conf/zoo.cfg & cd /share; /sbin/su-exec /app/dispatcher & /sbin/su-exec /app/bin/sciond --api-addr /run/shm/sciond/sd${USER_ISD_ID}-${USER_AS_ID}.sock --log_dir=/share/logs sd${USER_ISD_ID}-${USER_AS_ID} conf & /sbin/su-exec /app/bin/path_server ps${USER_ISD_ID}-${USER_AS_ID}-1 conf"
+    network_mode: "host"
+    environment:
+      ZOO_LOG_DIR: "/share/logs"
+      ZOO_PORT: "2182"
+      SU_EXEC_USERSPEC: "scion"
+    volumes:
+      - "${GEN_FOLDER}/dispatcher/dispatcher.zlog.conf:/share/conf/dispatcher.zlog.conf"
+      - "${GEN_FOLDER}/ISD${USER_ISD_ID}/AS${USER_AS_ID}/ps${USER_ISD_ID}-${USER_AS_ID}-1:/share/conf"
+      - "../gen-cache:/share/gen-cache"
+      - "../logs/path:/share/logs"
+  beacon:
+    image: scionlab/scion_beacon_py:selfcontained
+    entrypoint: /bin/bash -c 'cd /zookeeper-3.4.13/bin/; /sbin/su-exec /docker-entrypoint.sh ./zkServer.sh start /conf/zoo.cfg & sleep 2; cd /share; /sbin/su-exec /app/dispatcher & /sbin/su-exec /app/bin/sciond --api-addr /run/shm/sciond/sd${USER_ISD_ID}-${USER_AS_ID}.sock --log_dir=/share/logs sd${USER_ISD_ID}-${USER_AS_ID} conf & /sbin/su-exec /app/bin/beacon_server bs${USER_ISD_ID}-${USER_AS_ID}-1 conf'
+    network_mode: "host"
+    environment:
+      ZOO_LOG_DIR: "/share/logs"
+      ZOO_PORT: "2181"
+      SU_EXEC_USERSPEC: "scion"
+    volumes:
+      - "${GEN_FOLDER}/dispatcher/dispatcher.zlog.conf:/share/conf/dispatcher.zlog.conf"
+      - "${GEN_FOLDER}/ISD${USER_ISD_ID}/AS${USER_AS_ID}/bs${USER_ISD_ID}-${USER_AS_ID}-1:/share/conf"
+      - "../gen-cache:/share/gen-cache"
+      - "../logs/beacon:/share/logs"
+  cert:
+    image: scionlab/scion_cert:selfcontained
+    entrypoint: /bin/bash -c 'cd /zookeeper-3.4.13/bin/; /sbin/su-exec /docker-entrypoint.sh ./zkServer.sh start /conf/zoo.cfg & cd /share; /sbin/su-exec /app/dispatcher & /sbin/su-exec /app/bin/sciond --api-addr /run/shm/sciond/sd${USER_ISD_ID}-${USER_AS_ID}.sock --log_dir=/share/logs sd${USER_ISD_ID}-${USER_AS_ID} conf & /sbin/su-exec /app/cert_srv -id cs${USER_ISD_ID}-${USER_AS_ID}-1 -confd conf -sciond /run/shm/sciond/sd${USER_ISD_ID}-${USER_AS_ID}.sock -cached /share/gen-cache'
+    environment:
+      ZOO_LOG_DIR: "/share/logs"
+      ZOO_PORT: "2183"
+      SU_EXEC_USERSPEC: "scion"
+    volumes:
+      - "${GEN_FOLDER}/dispatcher/dispatcher.zlog.conf:/share/conf/dispatcher.zlog.conf"
+      - "${GEN_FOLDER}/ISD${USER_ISD_ID}/AS${USER_AS_ID}/cs${USER_ISD_ID}-${USER_AS_ID}-1:/share/conf"
+      - "../gen-cache:/share/gen-cache"
+      - "../logs/cert:/share/logs"
