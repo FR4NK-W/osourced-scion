@@ -41,6 +41,8 @@ type Logging struct {
 		Size uint
 		// Max age of log file in days (defaults to lib/log default).
 		MaxAge uint
+		// Max count of old log files (defaults to lib/log default).
+		MaxCount uint
 		// FlushInterval specifies how frequently to flush to the log file,
 		// in seconds (defaults to lib/log default).
 		FlushInterval *int
@@ -66,6 +68,9 @@ func (cfg *Logging) setDefaults() {
 	}
 	if cfg.File.MaxAge == 0 {
 		cfg.File.MaxAge = log.DefaultFileMaxAgeDays
+	}
+	if cfg.File.MaxCount == 0 {
+		cfg.File.MaxAge = log.DefaultFileMaxCount
 	}
 	if cfg.File.FlushInterval == nil {
 		s := log.DefaultFileFlushSeconds
@@ -93,6 +98,7 @@ func setupFileLogging(cfg *Logging) error {
 			cfg.File.Level,
 			int(cfg.File.Size),
 			int(cfg.File.MaxAge),
+			int(cfg.File.MaxCount),
 			*cfg.File.FlushInterval,
 		)
 	}

@@ -53,7 +53,7 @@ var (
 // output is buffered, but must be manually flushed by calling Flush(). If
 // logFlush = 0 logging output is unbuffered and Flush() is a no-op.
 func SetupLogFile(name string, logDir string, logLevel string, logSize int, logAge int,
-	logFlush int) error {
+	logCount int, logFlush int) error {
 
 	logLvl, err := log15.LvlFromString(changeTraceToDebug(logLevel))
 	if err != nil {
@@ -66,9 +66,10 @@ func SetupLogFile(name string, logDir string, logLevel string, logSize int, logA
 	name = strings.TrimSuffix(name, ".log")
 	var fileLogger io.WriteCloser
 	fileLogger = &lumberjack.Logger{
-		Filename: fmt.Sprintf("%s/%s.log", logDir, name),
-		MaxSize:  logSize, // MiB
-		MaxAge:   logAge,  // days
+		Filename:   fmt.Sprintf("%s/%s.log", logDir, name),
+		MaxSize:    logSize,  // MiB
+		MaxAge:     logAge,   // days
+		MaxBackups: logCount, // maximum number of old log files
 	}
 
 	if logFlush != 0 {
