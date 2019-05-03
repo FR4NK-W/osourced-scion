@@ -713,7 +713,7 @@ class SCIONElement(object):
             cert_ia = asm.isd_as()
             trc = self.trust_store.get_trc(cert_ia[0], asm.p.trcVer)
             if not trc:
-                logging.error("Could not get TRC %sv%s" (cert_ia[0], asm.p.trcVer))
+                logging.error("Could not get TRC %sv%s" % (cert_ia[0], asm.p.trcVer))
                 continue
             chain = self.trust_store.get_cert(asm.isd_as(), asm.p.certVer)
             if not chain:
