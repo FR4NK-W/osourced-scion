@@ -8,6 +8,7 @@ require (
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/dchest/cmac v0.0.0-20150527144652-62ff55a1048c
 	github.com/go-ini/ini v1.32.0
+	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/mock v1.2.1-0.20190329180013-73dc87cad333
 	github.com/google/go-cmp v0.3.0
 	github.com/google/go-querystring v1.0.1-0.20190318165438-c8c88dbee036 // indirect
@@ -20,8 +21,6 @@ require (
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.8
 	github.com/mattn/go-sqlite3 v1.9.1-0.20180719091609-b3511bfdd742
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.10.3 // indirect
 	github.com/onsi/gomega v1.7.1 // indirect
 	github.com/opentracing/opentracing-go v1.1.0
@@ -47,7 +46,6 @@ require (
 	golang.org/x/crypto v0.0.0-20190829043050-9756ffdc2472
 	golang.org/x/net v0.0.0-20191105084925-a882066a44e0
 	golang.org/x/tools v0.0.0-20191029041327-9cc4af7d6b2c
-	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20161007184028-e21e5cbec0cd
 	gopkg.in/restruct.v1 v1.0.0-20151213023948-80ede2e57cc2

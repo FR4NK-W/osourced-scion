@@ -66,7 +66,6 @@ github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7V
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kormat/fmt15 v0.0.0-20181112140556-ee69fecb2656 h1:aG3mi6+atPavBL5PM/s0XqiRuJ2n08aEY9xza16XGTo=
 github.com/kormat/fmt15 v0.0.0-20181112140556-ee69fecb2656/go.mod h1:8fpYQL5jskFnAq4zE2UpspqEVHuTjurptCxHPpdoBgM=
-github.com/kormat/goconvey v0.0.0-20191113114839-63cc4eee0dbc h1:NMGRuyMGEPkT+2ll1+M00ubrzqHa4Kfboygqql2mcgA=
 github.com/kormat/goconvey v0.0.0-20191113114839-63cc4eee0dbc/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
