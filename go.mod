@@ -5,8 +5,6 @@ require (
 	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
 	github.com/buildkite/go-buildkite v2.2.1-0.20190413010238-568b6651b687+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
-	github.com/cheekybits/genny v0.0.0-20170328200008-9127e812e1e9 // indirect
-	github.com/cloudflare/sidh v0.0.0-20181111220428-fc8e6378752b // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/dchest/cmac v0.0.0-20150527144652-62ff55a1048c
 	github.com/go-ini/ini v1.32.0
@@ -18,11 +16,12 @@ require (
 	github.com/inconshreveable/log15 v0.0.0-20161013181240-944cbfb97b44
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/kormat/fmt15 v0.0.0-20181112140556-ee69fecb2656
-	github.com/lucas-clemente/quic-go v0.7.1-0.20190212114006-fd7246d7ed6e
-	github.com/marten-seemann/qtls v0.0.0-20190207043627-591c71538704 // indirect
+	github.com/lucas-clemente/quic-go v0.14.0
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.8
 	github.com/mattn/go-sqlite3 v1.9.1-0.20180719091609-b3511bfdd742
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.10.3 // indirect
 	github.com/onsi/gomega v1.7.1 // indirect
 	github.com/opentracing/opentracing-go v1.1.0
@@ -45,9 +44,10 @@ require (
 	github.com/vishvananda/netlink v0.0.0-20170924180554-177f1ceba557
 	github.com/vishvananda/netns v0.0.0-20170219233438-54f0e4339ce7 // indirect
 	go.uber.org/atomic v1.5.1 // indirect
-	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+	golang.org/x/crypto v0.0.0-20190829043050-9756ffdc2472
 	golang.org/x/net v0.0.0-20191105084925-a882066a44e0
 	golang.org/x/tools v0.0.0-20191029041327-9cc4af7d6b2c
+	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20161007184028-e21e5cbec0cd
 	gopkg.in/restruct.v1 v1.0.0-20151213023948-80ede2e57cc2
