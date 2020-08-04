@@ -56,6 +56,10 @@ type Dispatcher struct {
 func (cfg *Config) InitDefaults() {
 }
 
+func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 func (cfg *Config) Validate() error {
 	if cfg.Dispatcher.ApplicationSocket == "" {
 		cfg.Dispatcher.ApplicationSocket = reliable.DefaultDispPath

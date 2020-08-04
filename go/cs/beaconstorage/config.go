@@ -87,6 +87,10 @@ func (cfg *BeaconDBConf) MaxIdleConns() (int, bool) {
 	return db.ConfiguredMaxIdleConns(*cfg)
 }
 
+func (cfg *BeaconDBConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 // Validate validates that all values are parsable, and the backend is set.
 func (cfg *BeaconDBConf) Validate() error {
 	if err := db.ValidateConfigLimits(*cfg); err != nil {

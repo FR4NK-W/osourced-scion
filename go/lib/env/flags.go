@@ -23,15 +23,18 @@ import (
 )
 
 var (
-	configFile string
-	helpConfig bool
-	version    bool
+	configFile        string
+	helpConfig        bool
+	interactiveConfig bool
+	version           bool
 )
 
 // AddFlags adds the config and sample flags.
 func AddFlags() {
 	flag.StringVar(&configFile, "config", "", "TOML config file.")
 	flag.BoolVar(&helpConfig, "help-config", false, "Output sample commented config file.")
+	flag.BoolVar(&interactiveConfig, "interactive-config", false, "Edit template config file " +
+		"with user provided values.")
 	flag.BoolVar(&version, "version", false, "Output version information and exit.")
 }
 
@@ -42,21 +45,28 @@ func ConfigFile() string {
 
 // Usage outputs run-time help to stdout.
 func Usage() {
-	fmt.Printf("Usage: %s -config <FILE> \n   or: %s -help-config\n\nArguments:\n",
+	fmt.Printf("Usage: %s -config <FILE> \n   " +
+		"or: %s {-help-config|-interactive-config}\n\nArguments:\n",
 		os.Args[0], os.Args[0])
 	flag.CommandLine.SetOutput(os.Stdout)
 	flag.PrintDefaults()
 }
 
-// CheckFlags checks whether the config or help-config flags have been set. In case the
-// help-config flag is set, the config flag is ignored and a commented sample config
-// is written to stdout.
+// CheckFlags checks whether the config, interactive-config or help-config flags have been set.
+// In case the either the help-config flag or interactive-config are set, the config flag is ignored
+// and a commented sample config is written to stdout or the config is created with the values provided
+// interactively.
 //
 // The first return value is the return code of the program. The second value
 // indicates whether the program can continue with its execution or should exit.
-func CheckFlags(sampler config.Sampler) (int, bool) {
+func CheckFlags(configurator config.Config) (int, bool) {
 	if helpConfig {
-		sampler.Sample(os.Stdout, nil, nil)
+		configurator.Sample(os.Stdout, nil, nil)
+		return 0, false
+	}
+	if interactiveConfig {
+		configurator.Configure(os.Stdout, nil, nil)
+		//configurator.Sample(os.Stdout, nil, nil)
 		return 0, false
 	}
 	if version {

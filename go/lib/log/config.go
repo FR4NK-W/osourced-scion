@@ -39,6 +39,7 @@ const (
 // Config is the configuration for the logger.
 type Config struct {
 	config.NoValidator
+	config.NoConfigurator
 	// File is the configuration for file logging.
 	File FileConfig `toml:"file,omitempty"`
 	// Console is the configuration for the console logging.

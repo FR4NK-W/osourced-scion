@@ -90,6 +90,10 @@ func (cfg *General) Validate() error {
 	return cfg.checkDir()
 }
 
+func (cfg *General) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 // checkDir checks that the config dir is a directory.
 func (cfg *General) checkDir() error {
 	if cfg.ConfigDir != "" {
@@ -148,6 +152,10 @@ func (cfg *SCIONDClient) Validate() error {
 		return serrors.New("InitialConnectPeriod must not be zero")
 	}
 	return nil
+}
+
+func (cfg *SCIONDClient) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
 }
 
 func (cfg *SCIONDClient) Sample(dst io.Writer, path config.Path, _ config.CtxMap) {
@@ -214,6 +222,10 @@ type Metrics struct {
 
 func (cfg *Metrics) Sample(dst io.Writer, path config.Path, _ config.CtxMap) {
 	config.WriteString(dst, metricsSample)
+}
+
+func (cfg *Metrics) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
 }
 
 func (cfg *Metrics) ConfigName() string {

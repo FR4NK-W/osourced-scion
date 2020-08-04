@@ -45,6 +45,10 @@ func (cfg *Config) InitDefaults() {
 	)
 }
 
+func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 func (cfg *Config) Validate() error {
 	return config.ValidateAll(
 		&cfg.General,
@@ -82,6 +86,10 @@ func (cfg *BR) InitDefaults() {
 	if cfg.RollbackFailAction != FailActionContinue {
 		cfg.RollbackFailAction = FailActionFatal
 	}
+}
+
+func (cfg *BR) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
 }
 
 func (cfg *BR) Validate() error {

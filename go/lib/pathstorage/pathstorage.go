@@ -84,6 +84,10 @@ func (cfg *PathDBConf) ConfigName() string {
 	return "path_db"
 }
 
+func (cfg *PathDBConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 // Validate validates the configuration, should be called after InitDefaults.
 func (cfg *PathDBConf) Validate() error {
 	if err := db.ValidateConfigLimits(*cfg); err != nil {
@@ -160,6 +164,10 @@ func (cfg *RevCacheConf) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func (cfg *RevCacheConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
 }
 
 func (cfg *RevCacheConf) Sample(dst io.Writer, _ config.Path, _ config.CtxMap) {

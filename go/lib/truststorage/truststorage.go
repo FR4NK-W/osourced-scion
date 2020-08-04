@@ -84,6 +84,10 @@ func (cfg *TrustDBConf) ConfigName() string {
 	return "trust_db"
 }
 
+func (cfg *TrustDBConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 func (cfg *TrustDBConf) Validate() error {
 	if err := db.ValidateConfigLimits(*cfg); err != nil {
 		return err

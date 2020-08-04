@@ -17,8 +17,8 @@
 // Usage
 //
 // Every configuration struct should implement the Config interface. There
-// are three parts to a configuration: Initialization, validation and
-// sample generation.
+// are four parts to a configuration: Initialization, validation,
+// sample generation and configuration from a template.
 //
 // Initialization
 //
@@ -42,23 +42,30 @@
 //
 // Warning: The method Sample is allowed to panic if an error occurs during
 // sample generation.
+//
+// Configuration
+// The sample configuration is interactively edited and validated.
+//
 package config
 
 import (
 	"fmt"
-	"io"
-
 	"github.com/scionproto/scion/go/lib/common"
+	"io"
+	"os"
 )
 
 const ID = "id"
 
 // Config is the interface that config structs should implement to allow for
-// streamlined initialization, validation and sample generation.
+// streamlined initialization, configuration, validation and sample generation.
 type Config interface {
 	Sampler
 	Validator
 	Defaulter
+	// Configure creates a customized config and writes it to dst. Ctx provides
+	// additional information.
+	Configure(dst io.Writer, path Path, ctx CtxMap)
 }
 
 // Validator defines the validation part of Config.
@@ -130,6 +137,22 @@ func (s StringSampler) ConfigName() string {
 	return s.Name
 }
 
+// NoConfigurator implements a Configurator that only applies the default values.
+// It can be embedded in config structs that do not need any non-default values.
+type NoConfigurator struct{
+	Defaulter
+	Validator
+}
+
+// Configure with defaults.
+func (c NoConfigurator) Configure(dst io.Writer, _ Path, _ CtxMap) {
+	c.InitDefaults()
+	if err := c.Validate(); err != nil {
+		return
+	}
+	WriteConfiguration(dst, nil, nil,  c)
+}
+
 // ValidateAll validates all validators. The first error encountered is returned.
 func ValidateAll(validators ...Validator) error {
 	for _, v := range validators {
@@ -142,7 +165,18 @@ func ValidateAll(validators ...Validator) error {
 
 // InitAll initializes all defaulters.
 func InitAll(defaulters ...Defaulter) {
-	for _, v := range defaulters {
-		v.InitDefaults()
+	for _, d := range defaulters {
+		d.InitDefaults()
 	}
+}
+
+// ConfigureAll configures and validates all configurators. The first error encountered is returned.
+func ConfigureAll(configurators ...Config) error {
+	for _, c := range configurators {
+		if err := c.Validate(); err != nil {
+			return common.NewBasicError("Unable to validate", err, "type", fmt.Sprintf("%T", c))
+		}
+		c.Sample(os.Stdout, nil, nil)
+	}
+	return nil
 }

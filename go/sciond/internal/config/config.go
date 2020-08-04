@@ -72,6 +72,10 @@ func (cfg *Config) Validate() error {
 	)
 }
 
+func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 func (cfg *Config) Sample(dst io.Writer, path config.Path, _ config.CtxMap) {
 	config.WriteSample(dst, path, config.CtxMap{config.ID: idSample},
 		&cfg.General,
@@ -114,6 +118,10 @@ func (cfg *SDConfig) Validate() error {
 		return serrors.New("QueryInterval must not be zero")
 	}
 	return nil
+}
+
+func (cfg *SDConfig) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
 }
 
 func (cfg *SDConfig) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {

@@ -97,6 +97,10 @@ func (cfg *Config) InitDefaults() {
 	)
 }
 
+func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 // Validate validates all parts of the config.
 func (cfg *Config) Validate() error {
 	return config.ValidateAll(
@@ -163,6 +167,10 @@ type BSConfig struct {
 
 // InitDefaults the default values for the durations that are equal to zero.
 func (cfg *BSConfig) InitDefaults() {
+}
+
+func (cfg *BSConfig) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
 }
 
 // Validate validates that all durations are set.
@@ -232,6 +240,10 @@ func (cfg *PSConfig) InitDefaults() {
 	}
 }
 
+func (cfg *PSConfig) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 func (cfg *PSConfig) Validate() error {
 	if cfg.QueryInterval.Duration == 0 {
 		return serrors.New("query_interval must not be zero")
@@ -272,6 +284,10 @@ type Policies struct {
 	// and the corresponding hidden path groups.
 	// If this is the empty string, no hidden path functionality is used.
 	HiddenPathRegistration string `toml:"hidden_path_registration,omitempty"`
+}
+
+func (cfg *Policies) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
 }
 
 // Sample generates a sample for the beacon server specific configuration.

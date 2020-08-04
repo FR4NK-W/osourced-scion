@@ -37,6 +37,10 @@ func (cfg *Features) Validate() error {
 	return nil
 }
 
+func (cfg *Features) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
+}
+
 func (cfg *Features) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {
 	config.WriteString(dst, featuresSample)
 }

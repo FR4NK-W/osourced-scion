@@ -51,6 +51,16 @@ func (cfg *Config) InitDefaults() {
 	)
 }
 
+func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	config.WriteConfiguration(dst, path, config.CtxMap{config.ID: idSample},
+		&cfg.Features,
+		&cfg.Logging,
+		&cfg.Metrics,
+		&cfg.Sciond,
+		&cfg.Sig,
+	)
+}
+
 func (cfg *Config) Validate() error {
 	return config.ValidateAll(
 		&cfg.Features,
@@ -143,6 +153,10 @@ func (cfg *SigConf) Validate() error {
 
 func (cfg *SigConf) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {
 	config.WriteString(dst, fmt.Sprintf(sigSample, ctx[config.ID]))
+}
+
+func (cfg *SigConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+	return
 }
 
 func (cfg *SigConf) ConfigName() string {
