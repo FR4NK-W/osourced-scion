@@ -84,7 +84,7 @@ func (cfg *PathDBConf) ConfigName() string {
 	return "path_db"
 }
 
-func (cfg *PathDBConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+func (cfg *PathDBConf) Configure(dst io.Writer) {
 	return
 }
 
@@ -166,7 +166,7 @@ func (cfg *RevCacheConf) Validate() error {
 	return nil
 }
 
-func (cfg *RevCacheConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+func (cfg *RevCacheConf) Configure(dst io.Writer) {
 	return
 }
 

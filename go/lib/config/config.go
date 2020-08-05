@@ -52,7 +52,6 @@ import (
 	"fmt"
 	"github.com/scionproto/scion/go/lib/common"
 	"io"
-	"os"
 )
 
 const ID = "id"
@@ -65,7 +64,7 @@ type Config interface {
 	Defaulter
 	// Configure creates a customized config and writes it to dst. Ctx provides
 	// additional information.
-	Configure(dst io.Writer, path Path, ctx CtxMap)
+	Configure(dst io.Writer)
 }
 
 // Validator defines the validation part of Config.
@@ -144,13 +143,10 @@ type NoConfigurator struct{
 	Validator
 }
 
-// Configure with defaults.
-func (c NoConfigurator) Configure(dst io.Writer, _ Path, _ CtxMap) {
+// Configure leaves defaults as set by initialization.
+func (c NoConfigurator) Configure(dst io.Writer) {
 	c.InitDefaults()
-	if err := c.Validate(); err != nil {
-		return
-	}
-	WriteConfiguration(dst, nil, nil,  c)
+	return
 }
 
 // ValidateAll validates all validators. The first error encountered is returned.
@@ -171,12 +167,12 @@ func InitAll(defaulters ...Defaulter) {
 }
 
 // ConfigureAll configures and validates all configurators. The first error encountered is returned.
-func ConfigureAll(configurators ...Config) error {
+func ConfigureAll(dst io.Writer, configurators ...Config) error {
 	for _, c := range configurators {
+		c.Configure(dst)
 		if err := c.Validate(); err != nil {
 			return common.NewBasicError("Unable to validate", err, "type", fmt.Sprintf("%T", c))
 		}
-		c.Sample(os.Stdout, nil, nil)
 	}
 	return nil
 }

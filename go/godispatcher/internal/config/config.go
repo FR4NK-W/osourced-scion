@@ -36,6 +36,7 @@ type Config struct {
 	Logging    log.Config   `toml:"log,omitempty"`
 	Metrics    env.Metrics  `toml:"metrics,omitempty"`
 	Dispatcher Dispatcher   `toml:"dispatcher,omitempty"`
+	config.NoConfigurator
 }
 
 // Dispatcher contains the dispatcher specific confing
@@ -54,10 +55,6 @@ type Dispatcher struct {
 }
 
 func (cfg *Config) InitDefaults() {
-}
-
-func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *Config) Validate() error {

@@ -22,12 +22,13 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// CtxMap contains the context for sample generation.
-type CtxConfiguratorMap map[string]string
+// WriteErrorMsg writes an error message
+func WriteErrorMsg(dst io.Writer, msg string) {
+	fmt.Fprintln(dst, msg)
+}
 
-// WriteConfiguration writes all configures config blocks in order of appearance with
-// indentation and header to dst.
-func WriteConfiguration(dst io.Writer, path Path, ctx CtxMap, configurators ...Validator) {
+// WriteConfiguration writes all configured config blocks
+func WriteConfiguration(dst io.Writer, configurators ...Config) {
 	var buf bytes.Buffer
 	for _, configurator := range configurators {
 		toml.NewEncoder(&buf).Encode(configurator)

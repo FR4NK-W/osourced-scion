@@ -25,7 +25,7 @@ import (
 var (
 	configFile        string
 	helpConfig        bool
-	interactiveConfig bool
+	interactiveConfig string
 	version           bool
 )
 
@@ -33,7 +33,7 @@ var (
 func AddFlags() {
 	flag.StringVar(&configFile, "config", "", "TOML config file.")
 	flag.BoolVar(&helpConfig, "help-config", false, "Output sample commented config file.")
-	flag.BoolVar(&interactiveConfig, "interactive-config", false, "Edit template config file " +
+	flag.StringVar(&interactiveConfig, "interactive-config", "", "Write config file " +
 		"with user provided values.")
 	flag.BoolVar(&version, "version", false, "Output version information and exit.")
 }
@@ -64,9 +64,14 @@ func CheckFlags(configurator config.Config) (int, bool) {
 		configurator.Sample(os.Stdout, nil, nil)
 		return 0, false
 	}
-	if interactiveConfig {
-		configurator.Configure(os.Stdout, nil, nil)
-		//configurator.Sample(os.Stdout, nil, nil)
+	if interactiveConfig != "" {
+		// Open file and write to file
+		f, err := os.OpenFile(interactiveConfig,
+			os.O_CREATE|os.O_WRONLY, os.FileMode(0644))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Err: Failed to create config output file %s.\n", interactiveConfig)
+		}
+		configurator.Configure(f)
 		return 0, false
 	}
 	if version {

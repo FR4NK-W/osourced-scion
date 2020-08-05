@@ -15,16 +15,21 @@
 package log
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/scionproto/scion/go/lib/config"
+	"github.com/inconshreveable/log15"
 )
 
 const (
 	// DefaultConsoleLevel is the default log level for the console.
 	DefaultConsoleLevel = "crit"
-	// DefaultFileLevel is the defaul log level for files.
+	// DefaultFileLevel is the default log level for files.
 	DefaultFileLevel = "debug"
 	// DefaultFileSizeMiB is the default rotation size in MiB.
 	DefaultFileSizeMiB = 50
@@ -39,7 +44,6 @@ const (
 // Config is the configuration for the logger.
 type Config struct {
 	config.NoValidator
-	config.NoConfigurator
 	// File is the configuration for file logging.
 	File FileConfig `toml:"file,omitempty"`
 	// Console is the configuration for the console logging.
@@ -65,6 +69,97 @@ func (c *Config) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {
 			Name: "console",
 		},
 	)
+}
+
+func (cfg *Config) Configure(dst io.Writer) {
+	fmt.Println("Configuring settings related to logging behavior:")
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Println("Provide logging file path:")
+		logFilePath, err := reader.ReadString('\n')
+		logFilePath = strings.TrimSpace(logFilePath)
+		if err == nil && len(logFilePath) > 0 {
+			cfg.File.Path = logFilePath
+			break
+		}
+		fmt.Fprintln(os.Stderr, "ERROR: Invalid log file path. Provide valid path to the log file.")
+	}
+	logLevels := []log15.Lvl{log15.LvlDebug, log15.LvlInfo, log15.LvlWarn, log15.LvlError, log15.LvlCrit}
+	for {
+		fmt.Printf("Provide file logging level (optional, " +
+			"choice=%s, default=%s):\n", logLevels, DefaultFileLevel)
+		fileLevel, _ := reader.ReadString('\n')
+		fileLevel = strings.TrimSpace(fileLevel)
+		_, err := log15.LvlFromString(fileLevel)
+		if err == nil {
+			cfg.File.Level = fileLevel
+			break
+		}
+		fmt.Fprintln(os.Stderr, "ERROR: Invalid log file level. Provide valid log level.")
+	}
+	for {
+		fmt.Printf("Provide max size of log file in MiB (default=%d):\n", DefaultFileSizeMiB)
+		maxFileSize, _ := reader.ReadString('\n')
+		maxFileSize = strings.TrimSpace(maxFileSize)
+		if maxFileSize == "" {
+			cfg.File.Size = DefaultFileSizeMiB
+			break
+		}
+		fileSizeMiB, err := strconv.Atoi(maxFileSize)
+		if err == nil {
+			cfg.File.Size = uint(fileSizeMiB)
+			break
+		}
+		fmt.Fprintln(os.Stderr, "ERROR: Invalid max log file size. Provide valid log file size.")
+	}
+	for {
+		fmt.Printf("Provide max age of log file in days (default=%d):\n", DefaultFileMaxAgeDays)
+		maxFileAge, _ := reader.ReadString('\n')
+		maxFileAge = strings.TrimSpace(maxFileAge)
+		if maxFileAge == "" {
+			cfg.File.MaxAge = DefaultFileMaxAgeDays
+			break
+		}
+		fileMaxAgeDays, err := strconv.Atoi(maxFileAge)
+		if err == nil {
+			cfg.File.MaxAge = uint(fileMaxAgeDays)
+			break
+		}
+		fmt.Fprintln(os.Stderr, "ERROR: Invalid max log file age. Provide valid log file age.")
+	}
+	for {
+		fmt.Printf("Provide max number of log files (default=%d):\n", DefaultFileMaxBackups)
+		maxFileAge, _ := reader.ReadString('\n')
+		maxFileAge = strings.TrimSpace(maxFileAge)
+		if maxFileAge == "" {
+			cfg.File.MaxAge = DefaultFileMaxBackups
+			break
+		}
+		fileMaxAgeDays, err := strconv.Atoi(maxFileAge)
+		if err == nil {
+			cfg.File.MaxAge = uint(fileMaxAgeDays)
+			break
+		}
+		fmt.Fprintln(os.Stderr, "ERROR: Invalid max log file age. Provide valid log file age.")
+	}
+	for {
+		fmt.Printf("Provide interval between flushed to file in seconds (default=%d):\n", DefaultFileFlushSeconds)
+		flushInterval, _ := reader.ReadString('\n')
+		flushInterval = strings.TrimSpace(flushInterval)
+		if flushInterval == "" {
+			s := DefaultFileFlushSeconds
+			cfg.File.FlushInterval = &s
+			break
+		}
+		fileFlushSeconds, err := strconv.Atoi(flushInterval)
+		if err == nil {
+			ufileFlushSeconds := uint(fileFlushSeconds)
+			cfg.File.FlushInterval = &ufileFlushSeconds
+			break
+		}
+		fmt.Fprintln(os.Stderr, "ERROR: Invalid max log file age. Provide valid log file age.")
+	}
+	return
 }
 
 // ConfigName returns the name this config should have in a struct embedding

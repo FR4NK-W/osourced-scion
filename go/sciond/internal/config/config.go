@@ -45,6 +45,7 @@ type Config struct {
 	// PathDB contains the configuration for the PathDB connection.
 	PathDB pathstorage.PathDBConf `toml:"path_db,omitempty"`
 	SD     SDConfig               `toml:"sd,omitempty"`
+	config.NoConfigurator
 }
 
 func (cfg *Config) InitDefaults() {
@@ -70,10 +71,6 @@ func (cfg *Config) Validate() error {
 		&cfg.PathDB,
 		&cfg.SD,
 	)
-}
-
-func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *Config) Sample(dst io.Writer, path config.Path, _ config.CtxMap) {
@@ -102,6 +99,7 @@ type SDConfig struct {
 	// QueryInterval specifies after how much time segments
 	// for a destination should be refetched.
 	QueryInterval util.DurWrap `toml:"query_interval,omitempty"`
+	config.NoConfigurator
 }
 
 func (cfg *SDConfig) InitDefaults() {
@@ -118,10 +116,6 @@ func (cfg *SDConfig) Validate() error {
 		return serrors.New("QueryInterval must not be zero")
 	}
 	return nil
-}
-
-func (cfg *SDConfig) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *SDConfig) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {

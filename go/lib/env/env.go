@@ -77,6 +77,7 @@ type General struct {
 	// ReconnectToDispatcher can be set to true to enable transparent dispatcher
 	// reconnects.
 	ReconnectToDispatcher bool `toml:"reconnect_to_dispatcher,omitempty"`
+	config.NoConfigurator
 }
 
 // InitDefaults sets the default value for Topology if not already set.
@@ -88,10 +89,6 @@ func (cfg *General) Validate() error {
 		return serrors.New("no element id specified")
 	}
 	return cfg.checkDir()
-}
-
-func (cfg *General) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 // checkDir checks that the config dir is a directory.
@@ -136,6 +133,7 @@ type SCIONDClient struct {
 	FakeData string `toml:"fake_data,omitempty"`
 	// PathCount is the maximum number of paths returned to the user.
 	PathCount uint16 `toml:"path_count,omitempty"`
+	config.NoConfigurator
 }
 
 func (cfg *SCIONDClient) InitDefaults() {
@@ -152,10 +150,6 @@ func (cfg *SCIONDClient) Validate() error {
 		return serrors.New("InitialConnectPeriod must not be zero")
 	}
 	return nil
-}
-
-func (cfg *SCIONDClient) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *SCIONDClient) Sample(dst io.Writer, path config.Path, _ config.CtxMap) {
@@ -215,6 +209,7 @@ var _ config.Config = (*Metrics)(nil)
 type Metrics struct {
 	config.NoDefaulter
 	config.NoValidator
+	config.NoConfigurator
 	// Prometheus contains the address to export prometheus metrics on. If
 	// not set, metrics are not exported.
 	Prometheus string `toml:"prometheus,omitempty"`
@@ -222,10 +217,6 @@ type Metrics struct {
 
 func (cfg *Metrics) Sample(dst io.Writer, path config.Path, _ config.CtxMap) {
 	config.WriteString(dst, metricsSample)
-}
-
-func (cfg *Metrics) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *Metrics) ConfigName() string {

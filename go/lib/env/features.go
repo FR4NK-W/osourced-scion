@@ -22,23 +22,20 @@ import (
 
 var _ config.Config = (*Features)(nil)
 
-// Features contains all feautre flags. Add feature flags to this structure as
+// Features contains all feature flags. Add feature flags to this structure as
 // needed. Feature flags are always boolean. Don't use any other types here!
 type Features struct {
 	AllowRunAsRoot bool `toml:"allow_run_as_root,omitempty"`
 	UseSIGEgress2  bool `toml:"sig_egress_v2,omitempty"`
+	config.NoConfigurator
 }
 
 func (cfg *Features) InitDefaults() {
-	// All feature flags are intialized to false.
+	// All feature flags are initialized to false.
 }
 
 func (cfg *Features) Validate() error {
 	return nil
-}
-
-func (cfg *Features) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *Features) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {

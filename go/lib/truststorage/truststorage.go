@@ -84,7 +84,7 @@ func (cfg *TrustDBConf) ConfigName() string {
 	return "trust_db"
 }
 
-func (cfg *TrustDBConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+func (cfg *TrustDBConf) Configure(dst io.Writer) {
 	return
 }
 

@@ -87,7 +87,7 @@ func (cfg *BeaconDBConf) MaxIdleConns() (int, bool) {
 	return db.ConfiguredMaxIdleConns(*cfg)
 }
 
-func (cfg *BeaconDBConf) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
+func (cfg *BeaconDBConf) Configure(dst io.Writer) {
 	return
 }
 

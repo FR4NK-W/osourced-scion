@@ -79,6 +79,7 @@ type Config struct {
 	PathDB   pathstorage.PathDBConf     `toml:"path_db,omitempty"`
 	BS       BSConfig                   `toml:"beaconing,omitempty"`
 	PS       PSConfig                   `toml:"path,omitempty"`
+	config.NoConfigurator
 }
 
 // InitDefaults initializes the default values for all parts of the config.
@@ -95,10 +96,6 @@ func (cfg *Config) InitDefaults() {
 		&cfg.BS,
 		&cfg.PS,
 	)
-}
-
-func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 // Validate validates all parts of the config.
@@ -163,14 +160,11 @@ type BSConfig struct {
 	RevOverlap util.DurWrap `toml:"rev_overlap,omitempty"`
 	// Policies contains the policy files.
 	Policies Policies `toml:"policies,omitempty"`
+	config.NoConfigurator
 }
 
 // InitDefaults the default values for the durations that are equal to zero.
 func (cfg *BSConfig) InitDefaults() {
-}
-
-func (cfg *BSConfig) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 // Validate validates that all durations are set.
@@ -232,16 +226,13 @@ type PSConfig struct {
 	// QueryInterval specifies after how much time segments
 	// for a destination should be refetched.
 	QueryInterval util.DurWrap `toml:"query_interval,omitempty"`
+	config.NoConfigurator
 }
 
 func (cfg *PSConfig) InitDefaults() {
 	if cfg.QueryInterval.Duration == 0 {
 		cfg.QueryInterval.Duration = DefaultQueryInterval
 	}
-}
-
-func (cfg *PSConfig) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *PSConfig) Validate() error {
@@ -284,10 +275,7 @@ type Policies struct {
 	// and the corresponding hidden path groups.
 	// If this is the empty string, no hidden path functionality is used.
 	HiddenPathRegistration string `toml:"hidden_path_registration,omitempty"`
-}
-
-func (cfg *Policies) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
+	config.NoConfigurator
 }
 
 // Sample generates a sample for the beacon server specific configuration.

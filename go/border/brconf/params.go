@@ -33,6 +33,7 @@ type Config struct {
 	Logging  log.Config   `toml:"log,omitempty"`
 	Metrics  env.Metrics  `toml:"metrics,omitempty"`
 	BR       BR           `toml:"br,omitempty"`
+	config.NoConfigurator
 }
 
 func (cfg *Config) InitDefaults() {
@@ -43,10 +44,6 @@ func (cfg *Config) InitDefaults() {
 		&cfg.Metrics,
 		&cfg.BR,
 	)
-}
-
-func (cfg *Config) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *Config) Validate() error {
@@ -80,16 +77,13 @@ type BR struct {
 	// RollbackFailAction indicates the action that should be taken
 	// if the rollback fails.
 	RollbackFailAction FailAction `toml:"rollback_fail_action,omitempty"`
+	config.NoConfigurator
 }
 
 func (cfg *BR) InitDefaults() {
 	if cfg.RollbackFailAction != FailActionContinue {
 		cfg.RollbackFailAction = FailActionFatal
 	}
-}
-
-func (cfg *BR) Configure(dst io.Writer, path config.Path, ctx config.CtxMap) {
-	return
 }
 
 func (cfg *BR) Validate() error {
