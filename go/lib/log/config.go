@@ -17,13 +17,11 @@ package log
 import (
 	"bufio"
 	"fmt"
+	"github.com/inconshreveable/log15"
+	"github.com/scionproto/scion/go/lib/config"
 	"io"
 	"os"
 	"strconv"
-	"strings"
-
-	"github.com/scionproto/scion/go/lib/config"
-	"github.com/inconshreveable/log15"
 )
 
 const (
@@ -74,10 +72,9 @@ func (c *Config) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {
 func (cfg *Config) Configure(dst io.Writer) {
 	fmt.Println("Configuring settings related to logging behavior:")
 	reader := bufio.NewReader(os.Stdin)
+	pr := config.PromptReader{Reader: *reader}
 	for {
-		fmt.Println("Provide logging file path:")
-		logFilePath, err := reader.ReadString('\n')
-		logFilePath = strings.TrimSpace(logFilePath)
+		logFilePath, err := pr.PromptRead("Provide logging file path:\n")
 		if err == nil && len(logFilePath) > 0 {
 			cfg.File.Path = logFilePath
 			break
@@ -86,10 +83,8 @@ func (cfg *Config) Configure(dst io.Writer) {
 	}
 	logLevels := []log15.Lvl{log15.LvlDebug, log15.LvlInfo, log15.LvlWarn, log15.LvlError, log15.LvlCrit}
 	for {
-		fmt.Printf("Provide file logging level (optional, " +
-			"choice=%s, default=%s):\n", logLevels, DefaultFileLevel)
-		fileLevel, _ := reader.ReadString('\n')
-		fileLevel = strings.TrimSpace(fileLevel)
+		fileLevel, _ := pr.PromptRead(fmt.Sprintf("Provide file logging level (optional, " +
+			"choice=%s, default=%s):\n", logLevels, DefaultFileLevel))
 		_, err := log15.LvlFromString(fileLevel)
 		if err == nil {
 			cfg.File.Level = fileLevel
@@ -98,9 +93,8 @@ func (cfg *Config) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid log file level. Provide valid log level.")
 	}
 	for {
-		fmt.Printf("Provide max size of log file in MiB (default=%d):\n", DefaultFileSizeMiB)
-		maxFileSize, _ := reader.ReadString('\n')
-		maxFileSize = strings.TrimSpace(maxFileSize)
+		maxFileSize, _ := pr.PromptRead(fmt.Sprintf("Provide max size of log file in MiB " +
+			"(default=%d):\n", DefaultFileSizeMiB))
 		if maxFileSize == "" {
 			cfg.File.Size = DefaultFileSizeMiB
 			break
@@ -113,9 +107,8 @@ func (cfg *Config) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid max log file size. Provide valid log file size.")
 	}
 	for {
-		fmt.Printf("Provide max age of log file in days (default=%d):\n", DefaultFileMaxAgeDays)
-		maxFileAge, _ := reader.ReadString('\n')
-		maxFileAge = strings.TrimSpace(maxFileAge)
+		maxFileAge, _ := pr.PromptRead(fmt.Sprintf("Provide max age of log file in days " +
+			"(default=%d):\n", DefaultFileMaxAgeDays))
 		if maxFileAge == "" {
 			cfg.File.MaxAge = DefaultFileMaxAgeDays
 			break
@@ -128,9 +121,8 @@ func (cfg *Config) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid max log file age. Provide valid log file age.")
 	}
 	for {
-		fmt.Printf("Provide max number of log files (default=%d):\n", DefaultFileMaxBackups)
-		maxFileAge, _ := reader.ReadString('\n')
-		maxFileAge = strings.TrimSpace(maxFileAge)
+		maxFileAge, _ := pr.PromptRead(fmt.Sprintf("Provide max number of log files " +
+			"(default=%d):\n", DefaultFileMaxBackups))
 		if maxFileAge == "" {
 			cfg.File.MaxAge = DefaultFileMaxBackups
 			break
@@ -143,9 +135,8 @@ func (cfg *Config) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid max log file age. Provide valid log file age.")
 	}
 	for {
-		fmt.Printf("Provide interval between flushed to file in seconds (default=%d):\n", DefaultFileFlushSeconds)
-		flushInterval, _ := reader.ReadString('\n')
-		flushInterval = strings.TrimSpace(flushInterval)
+		flushInterval, _ := pr.PromptRead(fmt.Sprintf("Provide interval between flushed to file in seconds " +
+			"(default=%d):\n", DefaultFileFlushSeconds))
 		if flushInterval == "" {
 			s := DefaultFileFlushSeconds
 			cfg.File.FlushInterval = &s

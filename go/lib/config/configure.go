@@ -15,9 +15,11 @@
 package config
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 )
@@ -35,4 +37,15 @@ func WriteConfiguration(dst io.Writer, configurators ...Config) {
 		fmt.Fprint(dst, buf.String())
 		buf.Reset()
 	}
+}
+
+type PromptReader struct {
+	Reader bufio.Reader
+}
+
+func (p PromptReader) PromptRead(prompt string) (ret string, err error) {
+	fmt.Printf(prompt)
+	ret, err = p.Reader.ReadString('\n')
+	ret = strings.TrimSpace(ret)
+	return
 }

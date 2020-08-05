@@ -17,18 +17,16 @@ package sigconfig
 import (
 	"bufio"
 	"fmt"
-	"io"
-	"net"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-
 	"github.com/scionproto/scion/go/lib/addr"
 	"github.com/scionproto/scion/go/lib/config"
 	"github.com/scionproto/scion/go/lib/env"
 	"github.com/scionproto/scion/go/lib/log"
 	"github.com/scionproto/scion/go/lib/serrors"
+	"io"
+	"net"
+	"os"
+	"path/filepath"
+	"strconv"
 )
 
 const (
@@ -169,10 +167,9 @@ func (cfg *SigConf) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {
 func (cfg *SigConf) Configure(dst io.Writer) {
 	fmt.Println("Configuring settings specific to the SIG:")
 	reader := bufio.NewReader(os.Stdin)
+	pr := config.PromptReader{Reader: *reader}
 	for {
-		fmt.Println("Provide SIG ID:")
-		sigID, err := reader.ReadString('\n')
-		sigID = strings.TrimSpace(sigID)
+		sigID, err := pr.PromptRead("Provide SIG ID:\n")
 		if err == nil && len(sigID) > 0 {
 			cfg.ID = sigID
 			break
@@ -180,9 +177,7 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid SIG ID. Provide an non-empty identifier string.")
 	}
 	for {
-		fmt.Println("Provide local ISD-AS identifier:")
-		isdAS, _ := reader.ReadString('\n')
-		isdAS = strings.TrimSpace(isdAS)
+		isdAS, err := pr.PromptRead("Provide local ISD-AS identifier:\n")
 		ia, err := addr.IAFromString(isdAS)
 		if err == nil {
 			cfg.IA = ia
@@ -193,10 +188,8 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 	defaultSigConfig := fmt.Sprintf("/etc/scion/gen/ISD%s/AS%s/sig%s-1/%s.json",
 		cfg.IA.I, cfg.IA.FileFmt(false), cfg.IA.FileFmt(false), cfg.ID)
 	for {
-		fmt.Printf("Provide sig_config SIG traffic rule configuration file " +
-			"path (default=%s):\n", defaultSigConfig)
-		sigConfig, _ := reader.ReadString('\n')
-		sigConfig = strings.TrimSpace(sigConfig)
+		sigConfig, _ := pr.PromptRead(fmt.Sprintf("Provide sig_config SIG traffic rule configuration file " +
+			"path (default=%s):\n", defaultSigConfig))
 		if sigConfig == "" {
 			cfg.SIGConfig = defaultSigConfig
 			break
@@ -209,9 +202,7 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 			"Provide absolute path to the traffic rule configuration file.")
 	}
 	for {
-		fmt.Println("Provide the SIG bind IP address:")
-		ip, _ := reader.ReadString('\n')
-		ip = strings.TrimSpace(ip)
+		ip, _ := pr.PromptRead("Provide the SIG bind IP address:\n")
 		bindIp := net.ParseIP(ip)
 		if bindIp != nil {
 			cfg.IP = bindIp
@@ -220,9 +211,8 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid IP. Provide valid IP address.")
 	}
 	for {
-		fmt.Printf("Provide the SIG control port (optional, default=%d):\n", DefaultCtrlPort)
-		controlPort, _ := reader.ReadString('\n')
-		controlPort = strings.TrimSpace(controlPort)
+		controlPort, _ := pr.PromptRead(fmt.Sprintf("Provide the SIG control port " +
+			"(optional, default=%d):\n", DefaultCtrlPort))
 		if controlPort == "" {
 			cfg.CtrlPort = DefaultCtrlPort
 			break
@@ -235,9 +225,8 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid control port. Provide valid control port.")
 	}
 	for {
-		fmt.Printf("Provide the SIG encapsulation port (optional, default=%d):\n", DefaultEncapPort)
-		encapsulationPort, _ := reader.ReadString('\n')
-		encapsulationPort = strings.TrimSpace(encapsulationPort)
+		encapsulationPort, _ := pr.PromptRead(fmt.Sprintf("Provide the SIG encapsulation port " +
+			"(optional, default=%d):\n", DefaultEncapPort))
 		if encapsulationPort == "" {
 			cfg.EncapPort = DefaultEncapPort
 			break
@@ -250,9 +239,8 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid encapsulation port. Provide valid encapsulation port.")
 	}
 	for {
-		fmt.Printf("Provide the name for the SIG TUN device (optional, default=%s):\n", DefaultTunName)
-		tunName, err := reader.ReadString('\n')
-		tunName = strings.TrimSpace(tunName)
+		tunName, err := pr.PromptRead(fmt.Sprintf("Provide the name for the SIG TUN device " +
+			"(optional, default=%s):\n", DefaultTunName))
 		if tunName == "" {
 			cfg.Tun = DefaultTunName
 			break
@@ -264,9 +252,8 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid TUN device name. Provide valid TUN device name.")
 	}
 	for {
-		fmt.Printf("Provide the ID of the SIG routing table (optional, default=%d):\n", DefaultTunRTableId)
-		tunTableID, err := reader.ReadString('\n')
-		tunTableID = strings.TrimSpace(tunTableID)
+		tunTableID, _ := pr.PromptRead(fmt.Sprintf("Provide the ID of the SIG routing table " +
+			"(optional, default=%d):\n", DefaultTunRTableId))
 		if tunTableID == "" {
 			cfg.TunRTableId = DefaultTunRTableId
 			break
@@ -279,9 +266,7 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 		fmt.Fprintln(os.Stderr, "ERROR: Invalid routing table ID. Provide valid SIG routing table ID.")
 	}
 	for {
-		fmt.Printf("Provide the IPv4 source address hint (optional, default=):\n")
-		ip4, _ := reader.ReadString('\n')
-		ip4 = strings.TrimSpace(ip4)
+		ip4, _ := pr.PromptRead("Provide the IPv4 source address hint (optional, default=):\n")
 		if ip4 == "" {
 			break
 		}
@@ -294,9 +279,7 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 			"IPv4 source address hint or leave empty.")
 	}
 	for {
-		fmt.Printf("Provide the IPv6 source address hint (optional, default=):\n")
-		ip6, _ := reader.ReadString('\n')
-		ip6 = strings.TrimSpace(ip6)
+		ip6, _ := pr.PromptRead("Provide the IPv6 source address hint (optional, default=):\n")
 		if ip6 == "" {
 			break
 		}
@@ -309,10 +292,8 @@ func (cfg *SigConf) Configure(dst io.Writer) {
 			"IPv6 source address hint or leave empty.")
 	}
 	for {
-		fmt.Printf("Provide the overlay address (e.g. \":30041\") " +
-			"to bypass the SCION dispatcher (optional, default=):\n")
-		dispatcherBypass, err := reader.ReadString('\n')
-		dispatcherBypass = strings.TrimSpace(dispatcherBypass)
+		dispatcherBypass, err := pr.PromptRead(fmt.Sprintf("Provide the overlay address (e.g. \":30041\") " +
+			"to bypass the SCION dispatcher (optional, default=):\n"))
 		if dispatcherBypass == "" {
 			break
 		}
