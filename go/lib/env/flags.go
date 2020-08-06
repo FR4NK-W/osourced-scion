@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/scionproto/scion/go/lib/config"
 )
@@ -65,7 +66,11 @@ func CheckFlags(configurator config.Config) (int, bool) {
 		return 0, false
 	}
 	if interactiveConfig != "" {
-		// Open file and write to file
+		err := os.MkdirAll(path.Dir(interactiveConfig), os.FileMode(0655))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Err: Failed to create output file %s directory.\n",
+				path.Dir(interactiveConfig))
+		}
 		f, err := os.OpenFile(interactiveConfig,
 			os.O_CREATE|os.O_WRONLY, os.FileMode(0644))
 		if err != nil {

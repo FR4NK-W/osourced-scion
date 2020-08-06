@@ -43,6 +43,12 @@ type PromptReader struct {
 	Reader bufio.Reader
 }
 
+// NewPromptReader returns a new PromptReader
+func NewPromptReader(rd io.Reader) *PromptReader {
+	reader := bufio.NewReader(rd)
+	return &PromptReader{Reader: *reader}
+}
+
 func (p PromptReader) PromptRead(prompt string) (ret string, err error) {
 	fmt.Printf(prompt)
 	ret, err = p.Reader.ReadString('\n')

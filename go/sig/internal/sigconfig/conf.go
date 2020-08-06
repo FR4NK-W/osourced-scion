@@ -15,7 +15,6 @@
 package sigconfig
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/scionproto/scion/go/lib/addr"
 	"github.com/scionproto/scion/go/lib/config"
@@ -165,9 +164,9 @@ func (cfg *SigConf) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {
 }
 
 func (cfg *SigConf) Configure(dst io.Writer) {
-	fmt.Println("Configuring settings specific to the SIG:")
-	reader := bufio.NewReader(os.Stdin)
-	pr := config.PromptReader{Reader: *reader}
+	fmt.Printf("Configuring settings specific to the SIG:\n" +
+		"Accept (default) values with Enter.\n\n")
+	pr := config.NewPromptReader(os.Stdin)
 	for {
 		sigID, err := pr.PromptRead("Provide SIG ID:\n")
 		if err == nil && len(sigID) > 0 {

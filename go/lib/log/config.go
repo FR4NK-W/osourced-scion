@@ -15,7 +15,6 @@
 package log
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/inconshreveable/log15"
 	"github.com/scionproto/scion/go/lib/config"
@@ -70,9 +69,9 @@ func (c *Config) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {
 }
 
 func (cfg *Config) Configure(dst io.Writer) {
-	fmt.Println("Configuring settings related to logging behavior:")
-	reader := bufio.NewReader(os.Stdin)
-	pr := config.PromptReader{Reader: *reader}
+	fmt.Printf("Configuring settings related to logging behavior:\n" +
+		"Accept (default) values with Enter.\n\n")
+	pr := config.NewPromptReader(os.Stdin)
 	for {
 		logFilePath, err := pr.PromptRead("Provide logging file path:\n")
 		if err == nil && len(logFilePath) > 0 {
@@ -85,6 +84,10 @@ func (cfg *Config) Configure(dst io.Writer) {
 	for {
 		fileLevel, _ := pr.PromptRead(fmt.Sprintf("Provide file logging level (optional, " +
 			"choice=%s, default=%s):\n", logLevels, DefaultFileLevel))
+		if fileLevel == "" {
+			cfg.File.Level = DefaultFileLevel
+			break
+		}
 		_, err := log15.LvlFromString(fileLevel)
 		if err == nil {
 			cfg.File.Level = fileLevel

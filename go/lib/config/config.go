@@ -145,7 +145,6 @@ type NoConfigurator struct{
 
 // Configure leaves defaults as set by initialization.
 func (c NoConfigurator) Configure(dst io.Writer) {
-	c.InitDefaults()
 	return
 }
 
@@ -169,6 +168,9 @@ func InitAll(defaulters ...Defaulter) {
 // ConfigureAll configures and validates all configurators. The first error encountered is returned.
 func ConfigureAll(dst io.Writer, configurators ...Config) error {
 	for _, c := range configurators {
+		if c == nil {
+			continue
+		}
 		c.Configure(dst)
 		if err := c.Validate(); err != nil {
 			return common.NewBasicError("Unable to validate", err, "type", fmt.Sprintf("%T", c))
