@@ -1,4 +1,5 @@
 // Copyright 2019 Anapaya Systems
+// Copyright 2020 ETH Zurich
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +19,7 @@
 //
 // Every configuration struct should implement the Config interface. There
 // are four parts to a configuration: Initialization, validation,
-// sample generation and configuration from a template.
+// sample generation and configuration.
 //
 // Initialization
 //
@@ -50,8 +51,9 @@ package config
 
 import (
 	"fmt"
-	"github.com/scionproto/scion/go/lib/common"
 	"io"
+
+	"github.com/scionproto/scion/go/lib/common"
 )
 
 const ID = "id"
