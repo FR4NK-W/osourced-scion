@@ -20,8 +20,8 @@ import (
 	"net/http"
 
 	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/netsec-ethz/scion-apps/pkg/appnet"
 	"github.com/netsec-ethz/scion-apps/pkg/appnet/appquic"
-	"github.com/netsec-ethz/scion-apps/pkg/mpsquic"
 )
 
 // Server wraps a http3.Server making it work with SCION
@@ -68,7 +68,7 @@ func (srv *Server) ListenAndServe() error {
 	if err != nil {
 		return err
 	}
-	sconn, err := mpsquic.PacketListen(laddr, nil)
+	sconn, err := appnet.Listen(laddr)
 	if err != nil {
 		return err
 	}
