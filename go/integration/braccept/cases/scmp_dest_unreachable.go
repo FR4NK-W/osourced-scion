@@ -91,7 +91,7 @@ func SCMPDestinationUnreachable(artifactsDir string, mac hash.Hash) runner.Case 
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4UDP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:3"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:1"),
 		Path:         sp,
@@ -141,9 +141,11 @@ func SCMPDestinationUnreachable(artifactsDir string, mac hash.Hash) runner.Case 
 		panic(err)
 	}
 
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	if err := sp.IncPath(); err != nil {
 		panic(err)
 	}

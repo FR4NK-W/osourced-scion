@@ -102,7 +102,7 @@ func SCMPParentToParentXover(artifactsDir string, mac hash.Hash) runner.Case {
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4UDP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:2"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:9"),
 		Path:         sp,
@@ -161,9 +161,11 @@ func SCMPParentToParentXover(artifactsDir string, mac hash.Hash) runner.Case {
 		panic(err)
 	}
 
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	if err := sp.IncPath(); err != nil {
 		panic(err)
 	}
@@ -272,7 +274,7 @@ func SCMPParentToChildXover(artifactsDir string, mac hash.Hash) runner.Case {
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4UDP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:2"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:8"),
 		Path:         sp,
@@ -331,9 +333,11 @@ func SCMPParentToChildXover(artifactsDir string, mac hash.Hash) runner.Case {
 		panic(err)
 	}
 
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	if err := sp.IncPath(); err != nil {
 		panic(err)
 	}
@@ -444,7 +448,7 @@ func SCMPChildToParentXover(artifactsDir string, mac hash.Hash) runner.Case {
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4UDP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:4"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:9"),
 		Path:         sp,
@@ -505,9 +509,11 @@ func SCMPChildToParentXover(artifactsDir string, mac hash.Hash) runner.Case {
 	}
 
 	sp.InfoFields[0].UpdateSegID(sp.HopFields[1].Mac)
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	if err := sp.IncPath(); err != nil {
 		panic(err)
 	}
@@ -616,7 +622,7 @@ func SCMPInternalXover(artifactsDir string, mac hash.Hash) runner.Case {
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4SCMP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:1"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:4"),
 		Path:         sp,
@@ -678,9 +684,11 @@ func SCMPInternalXover(artifactsDir string, mac hash.Hash) runner.Case {
 		panic(err)
 	}
 
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	if err := sp.IncPath(); err != nil {
 		panic(err)
 	}

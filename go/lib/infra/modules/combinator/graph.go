@@ -24,7 +24,6 @@ import (
 	"github.com/scionproto/scion/go/lib/addr"
 	"github.com/scionproto/scion/go/lib/common"
 	"github.com/scionproto/scion/go/lib/ctrl/seg"
-	"github.com/scionproto/scion/go/lib/slayers"
 	"github.com/scionproto/scion/go/lib/slayers/path"
 	"github.com/scionproto/scion/go/lib/slayers/path/scion"
 	"github.com/scionproto/scion/go/lib/snet"
@@ -116,8 +115,7 @@ func (g *dmg) traverseSegment(segment *inputSegment) {
 		// Whenever we add an edge that is not towards the first AS in the PCB,
 		// we are creating a shortcut. We use the asEntryIndex to annotate the
 		// edges as such, as we need the metadata during forwarding path
-		// construction when adding verify-only HFs and pruning unneeded pieces
-		// of the segment.
+		// construction when pruning unneeded pieces of the segment.
 
 		currentIA := asEntries[asEntryIndex].Local
 
@@ -275,13 +273,12 @@ type edgeMap map[*inputSegment]*edge
 type edge struct {
 	Weight int
 	// Shortcut is the ASEntry index on where the forwarding portion of this
-	// segment should end (for up-segments) or start (for down-segments). An
-	// additional V-only HF upstream of this ASEntry needs to be included for
-	// verification.  This is also set when crossing peering links. If 0, the
-	// full segment is used.
+	// segment should end (for up-segments) or start (for down-segments).
+	// This is also set when crossing peering links. If 0, the full segment is
+	// used.
 	Shortcut int
-	// Peer is the index in the hop entries array for this peer entry. If 0,
-	// the standard hop entry at index 0 is used (instead of a peer entry).
+	// Peer is the index + 1 in the peer entries array for ASEntry defined by the
+	// Shortcut index. This is 0 for non-peer shortcuts.
 	Peer int
 }
 
@@ -605,5 +602,5 @@ func (s segmentList) SPath() spath.Path {
 	if err := sp.SerializeTo(raw); err != nil {
 		panic(err)
 	}
-	return spath.Path{Raw: raw, Type: slayers.PathTypeSCION}
+	return spath.Path{Raw: raw, Type: scion.PathType}
 }

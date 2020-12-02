@@ -88,7 +88,7 @@ func SCMPTracerouteIngress(artifactsDir string, mac hash.Hash) runner.Case {
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4SCMP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:3"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:4"),
 		Path:         sp,
@@ -140,9 +140,11 @@ func SCMPTracerouteIngress(artifactsDir string, mac hash.Hash) runner.Case {
 	}
 
 	sp.HopFields[1].IngressRouterAlert = false
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	if err := sp.IncPath(); err != nil {
 		panic(err)
 	}
@@ -231,7 +233,7 @@ func SCMPTracerouteEgress(artifactsDir string, mac hash.Hash) runner.Case {
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4SCMP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:3"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:4"),
 		Path:         sp,
@@ -283,9 +285,11 @@ func SCMPTracerouteEgress(artifactsDir string, mac hash.Hash) runner.Case {
 	}
 
 	sp.HopFields[1].EgressRouterAlert = false
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	if err := sp.IncPath(); err != nil {
 		panic(err)
 	}
@@ -389,7 +393,7 @@ func SCMPTracerouteEgressAfterXover(artifactsDir string, mac hash.Hash) runner.C
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4SCMP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:8"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:4"),
 		Path:         sp,
@@ -439,9 +443,11 @@ func SCMPTracerouteEgressAfterXover(artifactsDir string, mac hash.Hash) runner.C
 	}
 
 	sp.HopFields[2].EgressRouterAlert = false
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	if err := sp.IncPath(); err != nil {
 		panic(err)
 	}
@@ -529,7 +535,7 @@ func SCMPTracerouteInternal(artifactsDir string, mac hash.Hash) runner.Case {
 		TrafficClass: 0xb8,
 		FlowID:       0xdead,
 		NextHdr:      common.L4SCMP,
-		PathType:     slayers.PathTypeSCION,
+		PathType:     scion.PathType,
 		SrcIA:        xtest.MustParseIA("1-ff00:0:1"),
 		DstIA:        xtest.MustParseIA("1-ff00:0:4"),
 		Path:         sp,
@@ -577,9 +583,11 @@ func SCMPTracerouteInternal(artifactsDir string, mac hash.Hash) runner.Case {
 	}
 
 	sp.HopFields[0].EgressRouterAlert = false
-	if err := sp.Reverse(); err != nil {
+	p, err := sp.Reverse()
+	if err != nil {
 		panic(err)
 	}
+	sp = p.(*scion.Decoded)
 	scionL.NextHdr = common.L4SCMP
 	scmpH = &slayers.SCMP{
 		TypeCode: slayers.CreateSCMPTypeCode(slayers.SCMPTypeTracerouteReply, 0),

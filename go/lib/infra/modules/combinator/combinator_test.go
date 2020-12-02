@@ -12,25 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package combinator
+package combinator_test
 
 import (
 	"bytes"
+	"encoding/binary"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/scionproto/scion/go/lib/addr"
 	"github.com/scionproto/scion/go/lib/common"
 	"github.com/scionproto/scion/go/lib/ctrl/seg"
+	"github.com/scionproto/scion/go/lib/infra/modules/combinator"
 	"github.com/scionproto/scion/go/lib/slayers/path"
 	"github.com/scionproto/scion/go/lib/slayers/path/scion"
+	"github.com/scionproto/scion/go/lib/snet"
+	"github.com/scionproto/scion/go/lib/spath"
 	"github.com/scionproto/scion/go/lib/xtest"
 	"github.com/scionproto/scion/go/lib/xtest/graph"
 )
@@ -76,22 +80,20 @@ func TestBadPeering(t *testing.T) {
 			},
 		},
 	}
-
-	Convey("main", t, func() {
-		for _, tc := range testCases {
-			Convey(tc.Name, func() {
-				result := Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs)
-				txtResult := writePaths(result)
-				if *update {
-					err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
-					xtest.FailOnErr(t, err)
-				}
-				expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
+	t.Log("TestBadPeering")
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			result := combinator.Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs, false)
+			txtResult := writePaths(result)
+			if *update {
+				err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
 				xtest.FailOnErr(t, err)
-				SoMsg("result", txtResult.String(), ShouldEqual, string(expected))
-			})
-		}
-	})
+			}
+			expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
+			assert.NoError(t, err)
+			assert.Equal(t, string(expected), txtResult.String())
+		})
+	}
 }
 
 func TestMultiPeering(t *testing.T) {
@@ -124,17 +126,17 @@ func TestMultiPeering(t *testing.T) {
 			},
 		},
 	}
-
+	t.Log("TestMultiPeering")
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			result := Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs)
+			result := combinator.Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs, false)
 			txtResult := writePaths(result)
 			if *update {
 				err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
 				xtest.FailOnErr(t, err)
 			}
 			expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
-			xtest.FailOnErr(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, string(expected), txtResult.String())
 		})
 	}
@@ -167,22 +169,20 @@ func TestSameCoreParent(t *testing.T) {
 			},
 		},
 	}
-
-	Convey("main", t, func() {
-		for _, tc := range testCases {
-			Convey(tc.Name, func() {
-				result := Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs)
-				txtResult := writePaths(result)
-				if *update {
-					err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
-					xtest.FailOnErr(t, err)
-				}
-				expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
+	t.Log("TestSameCoreParent")
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			result := combinator.Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs, false)
+			txtResult := writePaths(result)
+			if *update {
+				err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
 				xtest.FailOnErr(t, err)
-				SoMsg("result", txtResult.String(), ShouldEqual, string(expected))
-			})
-		}
-	})
+			}
+			expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
+			assert.NoError(t, err)
+			assert.Equal(t, string(expected), txtResult.String())
+		})
+	}
 }
 
 func TestLoops(t *testing.T) {
@@ -220,21 +220,20 @@ func TestLoops(t *testing.T) {
 			},
 		},
 	}
-	Convey("TestLoops", t, func() {
-		for _, tc := range testCases {
-			Convey(tc.Name, func() {
-				result := Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs)
-				txtResult := writePaths(result)
-				if *update {
-					err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
-					xtest.FailOnErr(t, err)
-				}
-				expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
+	t.Log("TestLoops")
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			result := combinator.Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs, false)
+			txtResult := writePaths(result)
+			if *update {
+				err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
 				xtest.FailOnErr(t, err)
-				SoMsg("result", txtResult.String(), ShouldEqual, string(expected))
-			})
-		}
-	})
+			}
+			expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
+			assert.NoError(t, err)
+			assert.Equal(t, string(expected), txtResult.String())
+		})
+	}
 }
 
 func TestComputePath(t *testing.T) {
@@ -528,25 +527,159 @@ func TestComputePath(t *testing.T) {
 			},
 		},
 	}
-
-	Convey("main", t, func() {
-		for _, tc := range testCases {
-			Convey(tc.Name, func() {
-				result := Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs)
-				txtResult := writePaths(result)
-				if *update {
-					err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
-					xtest.FailOnErr(t, err)
-				}
-				expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
+	t.Log("TestComputePath")
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			result := combinator.Combine(tc.SrcIA, tc.DstIA, tc.Ups, tc.Cores, tc.Downs, false)
+			txtResult := writePaths(result)
+			if *update {
+				err := ioutil.WriteFile(xtest.ExpandPath(tc.FileName), txtResult.Bytes(), 0644)
 				xtest.FailOnErr(t, err)
-				SoMsg("result", txtResult.String(), ShouldEqual, string(expected))
-			})
+			}
+			expected, err := ioutil.ReadFile(xtest.ExpandPath(tc.FileName))
+			assert.NoError(t, err)
+			assert.Equal(t, string(expected), txtResult.String())
+		})
+	}
+}
+func TestFilterDuplicates(t *testing.T) {
+	// Define three different path interface sequences for the test cases below.
+	// These look somewhat valid, but that doesn't matter at all -- we only look
+	// at the fingerprint anyway.
+	path0 := []snet.PathInterface{
+		{IA: xtest.MustParseIA("1-ff00:0:110"), ID: common.IFIDType(10)},
+		{IA: xtest.MustParseIA("1-ff00:0:111"), ID: common.IFIDType(10)},
+	}
+	path1 := []snet.PathInterface{
+		{IA: xtest.MustParseIA("1-ff00:0:110"), ID: common.IFIDType(11)},
+		{IA: xtest.MustParseIA("1-ff00:0:112"), ID: common.IFIDType(11)},
+		{IA: xtest.MustParseIA("1-ff00:0:112"), ID: common.IFIDType(12)},
+		{IA: xtest.MustParseIA("1-ff00:0:111"), ID: common.IFIDType(12)},
+	}
+	path2 := []snet.PathInterface{
+		{IA: xtest.MustParseIA("1-ff00:0:110"), ID: common.IFIDType(11)},
+		{IA: xtest.MustParseIA("1-ff00:0:112"), ID: common.IFIDType(11)},
+		{IA: xtest.MustParseIA("1-ff00:0:112"), ID: common.IFIDType(22)},
+		{IA: xtest.MustParseIA("1-ff00:0:111"), ID: common.IFIDType(22)},
+	}
+
+	// Define two expiry times for the paths: paths with latest expiry will be kept
+	timeEarly := time.Time{}
+	timeLater := timeEarly.Add(time.Hour) // just later than timeEarly
+
+	testPath := func(id uint32, interfaces []snet.PathInterface, expiry time.Time) combinator.Path {
+		idBuf := make([]byte, 4)
+		binary.LittleEndian.PutUint32(idBuf, id)
+		return combinator.Path{
+			// hide an id in the (otherwise unused) raw path
+			SPath: spath.Path{Raw: idBuf},
+			Metadata: snet.PathMetadata{
+				Interfaces: interfaces,
+				Expiry:     expiry,
+			},
 		}
-	})
+	}
+
+	testCases := []struct {
+		Name     string
+		Paths    []combinator.Path
+		Expected []uint32
+	}{
+		{
+			Name:     "nil slice",
+			Paths:    nil,
+			Expected: []uint32{},
+		},
+		{
+			Name:     "empty slice",
+			Paths:    []combinator.Path{},
+			Expected: []uint32{},
+		},
+		{
+			Name: "single path",
+			Paths: []combinator.Path{
+				testPath(1, path0, timeEarly),
+			},
+			Expected: []uint32{1},
+		},
+		{
+			Name: "different paths",
+			Paths: []combinator.Path{
+				testPath(1, path0, timeEarly),
+				testPath(2, path1, timeEarly),
+			},
+			Expected: []uint32{1, 2},
+		},
+		{
+			Name: "triple",
+			Paths: []combinator.Path{
+				testPath(1, path0, timeEarly),
+				testPath(2, path0, timeLater),
+				testPath(3, path0, timeEarly),
+			},
+			Expected: []uint32{2},
+		},
+		{
+			Name: "triple, same expiry",
+			Paths: []combinator.Path{
+				testPath(1, path0, timeEarly),
+				testPath(2, path0, timeLater),
+				testPath(3, path0, timeLater),
+			},
+			Expected: []uint32{2},
+		},
+		{
+			Name: "triple and double",
+			Paths: []combinator.Path{
+				testPath(1, path0, timeEarly),
+				testPath(2, path0, timeLater),
+				testPath(3, path0, timeEarly),
+				testPath(5, path1, timeLater),
+				testPath(6, path1, timeEarly),
+			},
+			Expected: []uint32{2, 5},
+		},
+		{
+			Name: "triple, double, single",
+			Paths: []combinator.Path{
+				testPath(1, path0, timeEarly),
+				testPath(2, path0, timeLater),
+				testPath(3, path0, timeEarly),
+				testPath(5, path1, timeLater),
+				testPath(6, path1, timeEarly),
+				testPath(7, path2, timeEarly),
+			},
+			Expected: []uint32{2, 5, 7},
+		},
+		{
+			Name: "triple, double, single, mixed",
+			Paths: []combinator.Path{
+				testPath(1, path1, timeEarly),
+				testPath(2, path2, timeEarly),
+				testPath(3, path0, timeEarly),
+				testPath(4, path0, timeLater),
+				testPath(5, path1, timeLater),
+				testPath(6, path0, timeEarly),
+			},
+			Expected: []uint32{2, 4, 5},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+
+			filtered := combinator.FilterDuplicates(tc.Paths)
+			// extract IDs hidden in the raw paths:
+			filteredIds := make([]uint32, len(filtered))
+			for i, path := range filtered {
+				filteredIds[i] = binary.LittleEndian.Uint32(path.SPath.Raw)
+			}
+			assert.Equal(t, tc.Expected, filteredIds)
+		})
+	}
 }
 
-func writePaths(paths []Path) *bytes.Buffer {
+func writePaths(paths []combinator.Path) *bytes.Buffer {
 	buffer := &bytes.Buffer{}
 	for i, p := range paths {
 		fmt.Fprintf(buffer, "Path #%d:\n", i)
@@ -555,7 +688,7 @@ func writePaths(paths []Path) *bytes.Buffer {
 	return buffer
 }
 
-func writeTestString(p Path, w io.Writer) {
+func writeTestString(p combinator.Path, w io.Writer) {
 	fmt.Fprintf(w, "  Weight: %d\n", p.Weight)
 
 	sp := scion.Decoded{}

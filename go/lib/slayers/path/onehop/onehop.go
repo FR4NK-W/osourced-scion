@@ -23,6 +23,18 @@ import (
 // PathLen is the length of a serialized one hop path in bytes
 const PathLen = path.InfoLen + 2*path.HopLen
 
+const PathType path.Type = 2
+
+func RegisterPath() {
+	path.RegisterPath(path.Metadata{
+		Type: PathType,
+		Desc: "OneHop",
+		New: func() path.Path {
+			return &Path{}
+		},
+	})
+}
+
 // Path encodes a one hop path. A one hop path is a special path that is created by a SCION router
 // in the first AS and completed by a SCION router in the second AS. It is used during beaconing
 // when there is not yet any other path segment available.
@@ -109,10 +121,23 @@ func (o *Path) ToSCIONDecoded() (*scion.Decoded, error) {
 	return p, nil
 }
 
-func (o *Path) Reverse() error {
-	return serrors.New("OneHop path cannot be reversed")
+// Rerverse a OneHop path that returns a reversed SCION path
+func (o Path) Reverse() (path.Path, error) {
+	sp, err := o.ToSCIONDecoded()
+	if err != nil {
+		return nil, serrors.WrapStr("converting to scion path", err)
+	}
+	// increment the path, since we are at the receiver side.
+	if err := sp.IncPath(); err != nil {
+		return nil, serrors.WrapStr("incrementing path", err)
+	}
+	return sp.Reverse()
 }
 
 func (o *Path) Len() int {
 	return PathLen
+}
+
+func (o *Path) Type() path.Type {
+	return PathType
 }

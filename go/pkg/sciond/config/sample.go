@@ -22,4 +22,7 @@ address = "127.0.0.1:30255"
 
 # The time after which segments for a destination are refetched. (default 5m)
 query_interval = "5m"
+
+# The configuration containing hidden path groups. (default "")
+hidden_path_groups =  ""
 `
