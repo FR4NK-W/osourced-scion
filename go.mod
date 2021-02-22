@@ -1,7 +1,7 @@
 module github.com/scionproto/scion
 
 require (
-	github.com/BurntSushi/toml v0.3.1
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/antlr/antlr4 v0.0.0-20181218183524-be58ebffde8e
 	github.com/buildkite/go-buildkite v2.2.1-0.20190413010238-568b6651b687+incompatible
 	github.com/dchest/cmac v0.0.0-20150527144652-62ff55a1048c
@@ -18,6 +18,7 @@ require (
 	github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365
 	github.com/insomniacslk/dhcp v0.0.0-20200922210017-67c425063dca
 	github.com/kr/pretty v0.2.0 // indirect
+	github.com/lucas-clemente/aes12 v0.0.0-20171027163421-cd47fb39b79f
 	github.com/lucas-clemente/quic-go v0.17.3
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12
@@ -35,7 +36,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
-	github.com/syndtr/gocapability v0.0.0-20160928074757-e7cb7fa329f4
+	github.com/syndtr/gocapability v0.0.0-20160928074757-e7cb7fa329f4 // indirect
 	github.com/uber/jaeger-client-go v2.20.1+incompatible
 	github.com/uber/jaeger-lib v2.0.0+incompatible // indirect
 	github.com/vishvananda/netlink v0.0.0-20170924180554-177f1ceba557
@@ -44,6 +45,7 @@ require (
 	golang.org/dl v0.0.0-20201105230244-7f2637f4aae3 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20200927032502-5d4f70055728
+	golang.org/x/sys v0.0.0-20200916030750-2334cc1a136f
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200929223013-bf155c11ec6f
 	google.golang.org/genproto v0.0.0-20191002211648-c459b9ce5143 // indirect
