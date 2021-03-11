@@ -37,6 +37,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/syndtr/gocapability v0.0.0-20160928074757-e7cb7fa329f4 // indirect
+	github.com/u-root/u-root v7.0.0+incompatible // indirect
 	github.com/uber/jaeger-client-go v2.20.1+incompatible
 	github.com/uber/jaeger-lib v2.0.0+incompatible // indirect
 	github.com/vishvananda/netlink v0.0.0-20170924180554-177f1ceba557
@@ -58,5 +59,7 @@ require (
 replace github.com/nxadm/tail => github.com/lukedirtwalker/tail v1.3.1-0.20190919080739-7f7d37fab281
 
 replace github.com/smartystreets/goconvey => github.com/kormat/goconvey v0.0.0-20191113114839-63cc4eee0dbc
+
+replace github.com/insomniacslk/dhcp => github.com/stapelberg/dhcp v0.0.0-20190429172946-5244c0daddf0
 
 go 1.14
