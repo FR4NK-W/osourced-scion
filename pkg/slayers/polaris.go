@@ -25,6 +25,13 @@ import (
 
 const polarisRawInterfaceLen = 8
 
+// PacketAuthOption wraps an EndToEndOption of OptTypeAuthenticator.
+// This can be used to serialize and parse the internal structure of the packet authenticator
+// option.
+type PolarisProbe struct {
+	*HopByHopOption
+}
+
 // PolarisProbe represents the structure of a Polaris P-probe.
 //
 //	 0                   1                   2                   3
@@ -40,7 +47,7 @@ const polarisRawInterfaceLen = 8
 //	+                        Interface ID                           +
 //	|                                                               |
 //	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-type PolarisProbe struct {
+type PolarisProbeE struct {
 	BaseLayer
 	Identifier uint16
 	Sequence   uint16
@@ -49,17 +56,17 @@ type PolarisProbe struct {
 }
 
 // LayerType returns LayerTypeSCMPTraceroute.
-func (*PolarisProbe) LayerType() gopacket.LayerType {
+func (*PolarisProbeE) LayerType() gopacket.LayerType {
 	return LayerTypeSCMPTraceroute
 }
 
 // NextLayerType returns the layer type contained by this DecodingLayer.
-func (*PolarisProbe) NextLayerType() gopacket.LayerType {
+func (*PolarisProbeE) NextLayerType() gopacket.LayerType {
 	return gopacket.LayerTypePayload
 }
 
 // DecodeFromBytes decodes the given bytes into this layer.
-func (i *PolarisProbe) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+func (i *PolarisProbeE) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
 	minLength := 2 + 2 + addr.IABytes + scmpRawInterfaceLen
 	if size := len(data); size < minLength {
 		df.SetTruncated()
@@ -83,7 +90,7 @@ func (i *PolarisProbe) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) 
 
 // SerializeTo writes the serialized form of this layer into the
 // SerializationBuffer, implementing gopacket.SerializableLayer.
-func (i *PolarisProbe) SerializeTo(b gopacket.SerializeBuffer,
+func (i *PolarisProbeE) SerializeTo(b gopacket.SerializeBuffer,
 	opts gopacket.SerializeOptions) error {
 
 	buf, err := b.PrependBytes(2 + 2 + addr.IABytes + scmpRawInterfaceLen)

@@ -1,4 +1,5 @@
 // Copyright 2020 Anapaya Systems
+// Copyright 2025 ETH Zurich
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -420,7 +421,7 @@ func (h *HopByHopExtnHandler) NextLayerType() gopacket.LayerType {
 // without parsing its content.
 // This can be used with a DecodingLayerParser to handle SCION packets which
 // may or may not have a HopByHop extension.
-type HopByHopExtnSkipperXXX struct {
+type HopByHopExtnSkipper struct {
 	extnBase
 }
 

@@ -1,5 +1,5 @@
 // Copyright 2020 Anapaya Systems
-// Copyright 2023 ETH Zurich
+// Copyright 2025 ETH Zurich
 // Copyright 2024 SCION Association
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -881,7 +881,7 @@ func newSlowPathProcessor(d *DataPlane) *slowPathPacketProcessor {
 			AcceptanceWindow: drkeyutil.LoadAcceptanceWindow(),
 		},
 		optAuth:      slayers.PacketAuthOption{EndToEndOption: new(slayers.EndToEndOption)},
-		polarisP:     slayers.PolarisProbe{HopByHopExtn: new(slayers.HopByHopOption)},
+		optPolaris:   slayers.PolarisProbe{HopByHopOption: new(slayers.HopByHopOption)},
 		validAuthBuf: make([]byte, 16),
 	}
 	p.scionLayer.RecyclePaths()
@@ -903,6 +903,10 @@ type slowPathPacketProcessor struct {
 
 	// optAuth is a reusable Packet Authenticator Option
 	optAuth slayers.PacketAuthOption
+
+	// optPolaris is a reusable Polaris (HBH) Option
+	optPolaris slayers.PolarisProbe
+
 	// validAuthBuf is a reusable buffer for the authentication tag
 	// to be used in the hasValidAuth() method.
 	validAuthBuf []byte
@@ -1124,7 +1128,7 @@ func (p *scionPacketProcessor) reset() error {
 	p.mac.Reset()
 	p.cachedMac = nil
 	// Reset hbh layer
-	p.hbhLayer = slayers.HopByHopExtnSkipper{}
+	p.hbhLayer = slayers.HopByHopExtnHandler{}
 	// Reset e2e layer
 	p.e2eLayer = slayers.EndToEndExtnSkipper{}
 	return nil
@@ -2620,11 +2624,11 @@ func (p *slowPathPacketProcessor) resetSPAOMetadata(key drkey.ASHostKey, now tim
 }
 
 func (p *slowPathPacketProcessor) hasPolarisProbe() bool {
-	// Check if e2eLayer was parsed for this packet
+	// Check if hbhLayer was parsed for this packet
 	if !p.lastLayer.CanDecode().Contains(slayers.LayerTypeHopByHopExtn) {
 		return false
 	}
-	// Parse incoming Polaris Probw
+	// Parse incoming Polaris Probe
 	hbhLayer := &slayers.HopByHopExtn{}
 	if err := hbhLayer.DecodeFromBytes(
 		p.hbhLayer.Contents,
@@ -2635,51 +2639,10 @@ func (p *slowPathPacketProcessor) hasPolarisProbe() bool {
 	hbhOptions  := hbhLayer.Options
 	for _, o := range hbhOptions {
 		if (*o).OptType == slayers.OptTypePolaris {
-
+			return true
 		}
 	}
-	if err != nil {
-		return false
-	}
-	authOption, err := slayers.ParsePacketAuthOption(e2eOption)
-	if err != nil {
-		return false
-	}
-	// Computing authField
-	// the sender should have used the receiver side key, i.e., K_{localIA-remoteIA:remoteHost}
-	// where remoteIA == p.scionLayer.SrcIA and remoteHost == srcAddr
-	// (for the incoming packet).
-	srcAddr, err := p.scionLayer.SrcAddr()
-	if err != nil {
-		return false
-	}
-	key, err := p.drkeyProvider.GetKeyWithinAcceptanceWindow(
-		t,
-		authOption.TimestampSN(),
-		p.scionLayer.SrcIA,
-		srcAddr,
-	)
-	if err != nil {
-		log.Debug("Selecting key to authenticate the incoming packet", "err", err)
-		return false
-	}
-
-	_, err = spao.ComputeAuthCMAC(
-		spao.MACInput{
-			Key:        key.Key[:],
-			Header:     authOption,
-			ScionLayer: &p.scionLayer,
-			PldType:    slayers.L4SCMP,
-			Pld:        p.lastLayer.LayerPayload(),
-		},
-		p.macInputBuffer,
-		p.validAuthBuf,
-	)
-	if err != nil {
-		return false
-	}
-	// compare incoming authField with computed authentication tag
-	return subtle.ConstantTimeCompare(authOption.Authenticator(), p.validAuthBuf) != 0
+	return false
 }
 
 func (p *slowPathPacketProcessor) hasValidAuth(t time.Time) bool {
@@ -2769,7 +2732,7 @@ func nextHdr(layer gopacket.DecodingLayer) slayers.L4ProtocolType {
 		return v.NextHdr
 	case *slayers.EndToEndExtnSkipper:
 		return v.NextHdr
-	case *slayers.HopByHopExtnSkipper:
+	case *slayers.HopByHopExtnHandler:
 		return v.NextHdr
 	default:
 		return slayers.L4None
