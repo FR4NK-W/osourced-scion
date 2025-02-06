@@ -43,6 +43,7 @@ type Metrics struct {
 	SiblingBFDPacketsSent     *prometheus.CounterVec
 	SiblingBFDPacketsReceived *prometheus.CounterVec
 	SiblingBFDStateChanges    *prometheus.CounterVec
+	Flows                     *prometheus.GaugeVec
 }
 
 // NewMetrics initializes the metrics for the Border Router, and registers them with the default
@@ -163,6 +164,13 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"sibling", "isd_as"},
 		),
+		Flows: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "router_interface_flow_count",
+				Help: "Number of flows on the egress interface",
+			},
+			[]string{"interface", "isd_as"},
+		),
 	}
 }
 
@@ -267,6 +275,7 @@ type trafficMetrics struct {
 	DroppedPacketsBusyForwarder prometheus.Counter
 	DroppedPacketsBusySlowPath  prometheus.Counter
 	ProcessedPackets            prometheus.Counter
+	ProcessedPolarisPackets     prometheus.Counter
 	Output                      [ttMax]outputMetrics
 }
 
@@ -276,6 +285,7 @@ type trafficMetrics struct {
 type outputMetrics struct {
 	OutputBytesTotal   prometheus.Counter
 	OutputPacketsTotal prometheus.Counter
+	Flows              prometheus.Gauge
 }
 
 func newInterfaceMetrics(
@@ -351,6 +361,8 @@ func newOutputMetrics(
 		metrics.OutputBytesTotal.MustCurryWith(ifLabels).MustCurryWith(scLabels).With(ttLabels)
 	om.OutputPacketsTotal =
 		metrics.OutputPacketsTotal.MustCurryWith(ifLabels).MustCurryWith(scLabels).With(ttLabels)
+	om.Flows =
+		metrics.Flows.MustCurryWith(ifLabels).MustCurryWith(scLabels).With(ttLabels)
 	om.OutputBytesTotal.Add(0)
 	om.OutputPacketsTotal.Add(0)
 	return om

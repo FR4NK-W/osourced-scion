@@ -851,6 +851,9 @@ func (d *DataPlane) runSlowPathProcessor(id int, q <-chan *Packet) {
 		err := processor.processPacket(p)
 		sc := classOfSize(len(p.rawPacket))
 		metrics := d.forwardingMetrics[p.ingress][sc]
+		if p.slowPathRequest.typ == slowPathPolarisProbe {
+			metrics.ProcessedPolarisPackets.Inc()
+		}
 		if err != nil {
 			log.Debug("Error processing packet", "err", err)
 			metrics.DroppedPacketsInvalid.Inc()
@@ -878,6 +881,7 @@ func newSlowPathProcessor(d *DataPlane) *slowPathPacketProcessor {
 			AcceptanceWindow: drkeyutil.LoadAcceptanceWindow(),
 		},
 		optAuth:      slayers.PacketAuthOption{EndToEndOption: new(slayers.EndToEndOption)},
+		polarisP:     slayers.PolarisProbe{HopByHopExtn: new(slayers.HopByHopOption)},
 		validAuthBuf: make([]byte, 16),
 	}
 	p.scionLayer.RecyclePaths()
@@ -889,7 +893,7 @@ type slowPathPacketProcessor struct {
 	pkt *Packet
 
 	scionLayer slayers.SCION
-	hbhLayer   slayers.HopByHopExtnSkipper
+	hbhLayer   slayers.HopByHopExtnHandler
 	e2eLayer   slayers.EndToEndExtnSkipper
 	lastLayer  gopacket.DecodingLayer
 	path       *scion.Raw
@@ -909,7 +913,7 @@ type slowPathPacketProcessor struct {
 
 func (p *slowPathPacketProcessor) reset() {
 	p.path = nil
-	p.hbhLayer = slayers.HopByHopExtnSkipper{}
+	p.hbhLayer = slayers.HopByHopExtnHandler{}
 	p.e2eLayer = slayers.EndToEndExtnSkipper{}
 }
 
@@ -966,6 +970,8 @@ func (p *slowPathPacketProcessor) processPacket(pkt *Packet) error {
 		return p.handleSCMPTraceRouteRequest(p.pkt.ingress)
 	case slowPathRouterAlertEgress: //Traceroute
 		return p.handleSCMPTraceRouteRequest(p.pkt.egress)
+	case slowPathPolarisProbe: //Polaris
+		return p.handlePolarisProbeRequest(p.pkt.egress)
 	default:
 		panic("Unsupported slow-path type")
 	}
@@ -1316,6 +1322,7 @@ const (
 	slowPathSCMP slowPathType = iota
 	slowPathRouterAlertIngress
 	slowPathRouterAlertEgress
+	slowPathPolarisProbe
 )
 
 func (p *slowPathPacketProcessor) packSCMP(
@@ -1844,6 +1851,14 @@ func (p *slowPathPacketProcessor) handleSCMPTraceRouteRequest(ifID uint16) error
 		Interface:  uint64(ifID),
 	}
 	return p.packSCMP(slayers.SCMPTypeTracerouteReply, 0, &scmpP, false)
+}
+
+func (p *slowPathPacketProcessor) handlePolarisProbeRequest(ifID uint16) error {
+	if p.lastLayer.NextLayerType() != slayers.LayerTypeHopByHopExtn {
+		log.Debug("Packet with Polaris handler, but no HBH extension")
+		return nil
+	}
+	return nil
 }
 
 func (p *scionPacketProcessor) validatePktLen() disposition {
@@ -2602,6 +2617,69 @@ func (p *slowPathPacketProcessor) resetSPAOMetadata(key drkey.ASHostKey, now tim
 		TimestampSN: timestamp,
 		Auth:        zeroBuffer,
 	})
+}
+
+func (p *slowPathPacketProcessor) hasPolarisProbe() bool {
+	// Check if e2eLayer was parsed for this packet
+	if !p.lastLayer.CanDecode().Contains(slayers.LayerTypeHopByHopExtn) {
+		return false
+	}
+	// Parse incoming Polaris Probw
+	hbhLayer := &slayers.HopByHopExtn{}
+	if err := hbhLayer.DecodeFromBytes(
+		p.hbhLayer.Contents,
+		gopacket.NilDecodeFeedback,
+	); err != nil {
+		return false
+	}
+	hbhOptions  := hbhLayer.Options
+	for _, o := range hbhOptions {
+		if (*o).OptType == slayers.OptTypePolaris {
+
+		}
+	}
+	if err != nil {
+		return false
+	}
+	authOption, err := slayers.ParsePacketAuthOption(e2eOption)
+	if err != nil {
+		return false
+	}
+	// Computing authField
+	// the sender should have used the receiver side key, i.e., K_{localIA-remoteIA:remoteHost}
+	// where remoteIA == p.scionLayer.SrcIA and remoteHost == srcAddr
+	// (for the incoming packet).
+	srcAddr, err := p.scionLayer.SrcAddr()
+	if err != nil {
+		return false
+	}
+	key, err := p.drkeyProvider.GetKeyWithinAcceptanceWindow(
+		t,
+		authOption.TimestampSN(),
+		p.scionLayer.SrcIA,
+		srcAddr,
+	)
+	if err != nil {
+		log.Debug("Selecting key to authenticate the incoming packet", "err", err)
+		return false
+	}
+
+	_, err = spao.ComputeAuthCMAC(
+		spao.MACInput{
+			Key:        key.Key[:],
+			Header:     authOption,
+			ScionLayer: &p.scionLayer,
+			PldType:    slayers.L4SCMP,
+			Pld:        p.lastLayer.LayerPayload(),
+		},
+		p.macInputBuffer,
+		p.validAuthBuf,
+	)
+	if err != nil {
+		return false
+	}
+	// compare incoming authField with computed authentication tag
+	return subtle.ConstantTimeCompare(authOption.Authenticator(), p.validAuthBuf) != 0
 }
 
 func (p *slowPathPacketProcessor) hasValidAuth(t time.Time) bool {

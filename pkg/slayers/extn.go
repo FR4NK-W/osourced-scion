@@ -34,6 +34,7 @@ const (
 	OptTypePad1 OptionType = iota
 	OptTypePadN
 	OptTypeAuthenticator
+	OptTypePolaris
 )
 
 type tlvOption struct {
@@ -382,11 +383,44 @@ func (e *EndToEndExtn) FindOption(typ OptionType) (*EndToEndOption, error) {
 	return nil, ErrOptionNotFound
 }
 
+// HopByHopExtnHandler is a DecodingLayer which decodes a HopByHop extension
+// and parses its content for the following HBH extensions: Polaris, .
+// This can be used with a DecodingLayerParser to handle SCION packets which
+// may or may not have a HopByHop extension.
+type HopByHopExtnHandler struct {
+	extnBase
+}
+
+// DecodeFromBytes implementation according to gopacket.DecodingLayer
+func (s *HopByHopExtnHandler) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
+	var err error
+	s.extnBase, err = decodeExtnBase(data, df)
+	if err != nil {
+		return err
+	}
+	if err := checkHopByHopExtnNextHdr(s.NextHdr); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *HopByHopExtnHandler) LayerType() gopacket.LayerType {
+	return LayerTypeHopByHopExtn
+}
+
+func (s *HopByHopExtnHandler) CanDecode() gopacket.LayerClass {
+	return LayerClassHopByHopExtn
+}
+
+func (h *HopByHopExtnHandler) NextLayerType() gopacket.LayerType {
+	return scionNextLayerTypeAfterHBH(h.NextHdr)
+}
+
 // HopByHopExtnSkipper is a DecodingLayer which decodes a HopByHop extension
 // without parsing its content.
 // This can be used with a DecodingLayerParser to handle SCION packets which
 // may or may not have a HopByHop extension.
-type HopByHopExtnSkipper struct {
+type HopByHopExtnSkipperXXX struct {
 	extnBase
 }
 
