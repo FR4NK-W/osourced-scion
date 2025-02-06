@@ -1886,6 +1886,16 @@ func (p *slowPathPacketProcessor) handlePolarisProbeOption(ifID uint16) error {
 		log.Debug("Packet with Polaris handler, but no HBH extension")
 		return serrors.New("decoding Polaris HBH P-Probe option, option missing")
 	}
+	isLast := p.path.IsLastHop()
+	if isLast {
+		// send Polaris reply
+	} else {
+		// Update probe
+
+		// And forward original packet, hop fields (and info fields?) have already been updated
+		// XXX: FR4NK-W
+
+	}
 	return nil
 }
 
