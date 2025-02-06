@@ -65,6 +65,7 @@ func realMain(ctx context.Context) error {
 		DataPlane: router.DataPlane{
 			Metrics:                        metrics,
 			ExperimentalSCMPAuthentication: globalCfg.Features.ExperimentalSCMPAuthentication,
+			ExperimentalPolarisProbes: globalCfg.Features.ExperimentalPolarisProbes,
 			RunConfig: router.RunConfig{
 				NumProcessors:         globalCfg.Router.NumProcessors,
 				NumSlowPathProcessors: globalCfg.Router.NumSlowPathProcessors,

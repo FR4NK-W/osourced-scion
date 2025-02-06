@@ -290,6 +290,17 @@ func checkHopByHopExtnNextHdr(t L4ProtocolType) error {
 	return nil
 }
 
+// FindOption returns the first option entry of the given type if any exists,
+// or ErrOptionNotFound otherwise.
+func (h *HopByHopExtn) FindOption(typ OptionType) (*HopByHopOption, error) {
+	for _, o := range h.Options {
+		if o.OptType == typ {
+			return o, nil
+		}
+	}
+	return nil, ErrOptionNotFound
+}
+
 // EndToEndOption is a TLV option present in a SCION end-to-end extension.
 type EndToEndOption tlvOption
 
@@ -382,39 +393,6 @@ func (e *EndToEndExtn) FindOption(typ OptionType) (*EndToEndOption, error) {
 		}
 	}
 	return nil, ErrOptionNotFound
-}
-
-// HopByHopExtnHandler is a DecodingLayer which decodes a HopByHop extension
-// and parses its content for the following HBH extensions: Polaris, .
-// This can be used with a DecodingLayerParser to handle SCION packets which
-// may or may not have a HopByHop extension.
-type HopByHopExtnHandler struct {
-	extnBase
-}
-
-// DecodeFromBytes implementation according to gopacket.DecodingLayer
-func (s *HopByHopExtnHandler) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback) error {
-	var err error
-	s.extnBase, err = decodeExtnBase(data, df)
-	if err != nil {
-		return err
-	}
-	if err := checkHopByHopExtnNextHdr(s.NextHdr); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (e *HopByHopExtnHandler) LayerType() gopacket.LayerType {
-	return LayerTypeHopByHopExtn
-}
-
-func (s *HopByHopExtnHandler) CanDecode() gopacket.LayerClass {
-	return LayerClassHopByHopExtn
-}
-
-func (h *HopByHopExtnHandler) NextLayerType() gopacket.LayerType {
-	return scionNextLayerTypeAfterHBH(h.NextHdr)
 }
 
 // HopByHopExtnSkipper is a DecodingLayer which decodes a HopByHop extension

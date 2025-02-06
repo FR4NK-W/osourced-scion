@@ -45,6 +45,13 @@ type Features struct {
 	//
 	// Experimental: This field is experimental and will be subject to change.
 	ExperimentalSCMPAuthentication bool `toml:"experimental_scmp_authentication"`
+	// ExperimentalPolarisProbes enables experimental Polaris probe handling.
+	//
+	// When enabled, the router will keep track of the required metrics and
+	// update HBH Polaris probes.
+	//
+	// Experimental: This field is experimental and will be subject to change.
+	ExperimentalPolarisProbes      bool `toml:"experimental_polaris_probes"`
 }
 
 func (cfg *Features) Sample(dst io.Writer, path config.Path, ctx config.CtxMap) {

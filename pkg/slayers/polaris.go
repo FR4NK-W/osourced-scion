@@ -25,34 +25,38 @@ import (
 
 const polarisRawInterfaceLen = 8
 
-// PacketAuthOption wraps an EndToEndOption of OptTypeAuthenticator.
-// This can be used to serialize and parse the internal structure of the packet authenticator
+// PolarisProbeOption wraps an HopByHopOption of OptTypeAuthenticator.
+// This can be used to serialize and parse the internal structure of the Polaris Probe
 // option.
-type PolarisProbe struct {
+type PolarisProbeOption struct {
 	*HopByHopOption
 }
 
-// PolarisProbe represents the structure of a Polaris P-probe.
+// PolarisProbeOption represents the structure of a Polaris (HBH) P-probe Option.
 //
 //	 0                   1                   2                   3
 //	 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	|           Identifier          |        Sequence Number        |
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	|              ISD              |                               |
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+         AS                    +
-//	|                                                               |
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	|                                                               |
-//	+                        Interface ID                           +
-//	|                                                               |
-//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	 |   NextHdr=UDP |     ExtLen    |  OptType=2    |       Code    |
+//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	 |          Checksum             |       Request Identifier      |
+//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	 |                         AS Identifier                         |
+//	 |                                                               |
+//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	 |            InterfaceID        |        BottleneckShare        |
+//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 type PolarisProbeE struct {
 	BaseLayer
-	Identifier uint16
-	Sequence   uint16
-	IA         addr.IA
-	Interface  uint64
+	Code              uint8
+	Checksum          uint16
+	RequestIdentifier uint16
+	SequenceNumber    uint16
+	CumQueuingDelay   uint16
+	IA                addr.IA
+	Interface         uint16
+	BottleneckSahre   uint16
 }
 
 // LayerType returns LayerTypeSCMPTraceroute.
@@ -73,13 +77,13 @@ func (i *PolarisProbeE) DecodeFromBytes(data []byte, df gopacket.DecodeFeedback)
 		return serrors.New("buffer too short", "min", minLength, "actual", size)
 	}
 	offset := 0
-	i.Identifier = binary.BigEndian.Uint16(data[offset : offset+2])
+	i.RequestIdentifier = binary.BigEndian.Uint16(data[offset : offset+2])
 	offset += 2
-	i.Sequence = binary.BigEndian.Uint16(data[offset : offset+2])
+	i.SequenceNumber = binary.BigEndian.Uint16(data[offset : offset+2])
 	offset += 2
 	i.IA = addr.IA(binary.BigEndian.Uint64(data[offset : offset+addr.IABytes]))
 	offset += addr.IABytes
-	i.Interface = binary.BigEndian.Uint64(data[offset : offset+scmpRawInterfaceLen])
+	i.Interface = binary.BigEndian.Uint16(data[offset : offset+scmpRawInterfaceLen])
 	offset += scmpRawInterfaceLen
 	i.BaseLayer = BaseLayer{
 		Contents: data[:offset],
@@ -137,7 +141,7 @@ type PolarisAlert struct {
 	Identifier uint16
 	Sequence   uint16
 	IA         addr.IA
-	Interface  uint64
+	Interface  uint16
 }
 
 // LayerType returns LayerTypeSCMPTraceroute.

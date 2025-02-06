@@ -199,6 +199,7 @@ type DataPlane struct {
 	dispatchedPortEnd   uint16
 
 	ExperimentalSCMPAuthentication bool
+	ExperimentalPolarisProbes      bool
 	RunConfig                      RunConfig
 
 	// The pool that stores all the packet buffers as described in the design document. See
@@ -881,7 +882,7 @@ func newSlowPathProcessor(d *DataPlane) *slowPathPacketProcessor {
 			AcceptanceWindow: drkeyutil.LoadAcceptanceWindow(),
 		},
 		optAuth:      slayers.PacketAuthOption{EndToEndOption: new(slayers.EndToEndOption)},
-		optPolaris:   slayers.PolarisProbe{HopByHopOption: new(slayers.HopByHopOption)},
+		optPolaris:   slayers.PolarisProbeOption{HopByHopOption: new(slayers.HopByHopOption)},
 		validAuthBuf: make([]byte, 16),
 	}
 	p.scionLayer.RecyclePaths()
@@ -893,7 +894,7 @@ type slowPathPacketProcessor struct {
 	pkt *Packet
 
 	scionLayer slayers.SCION
-	hbhLayer   slayers.HopByHopExtnHandler
+	hbhLayer   slayers.HopByHopExtn
 	e2eLayer   slayers.EndToEndExtnSkipper
 	lastLayer  gopacket.DecodingLayer
 	path       *scion.Raw
@@ -905,7 +906,7 @@ type slowPathPacketProcessor struct {
 	optAuth slayers.PacketAuthOption
 
 	// optPolaris is a reusable Polaris (HBH) Option
-	optPolaris slayers.PolarisProbe
+	optPolaris slayers.PolarisProbeOption
 
 	// validAuthBuf is a reusable buffer for the authentication tag
 	// to be used in the hasValidAuth() method.
@@ -917,7 +918,7 @@ type slowPathPacketProcessor struct {
 
 func (p *slowPathPacketProcessor) reset() {
 	p.path = nil
-	p.hbhLayer = slayers.HopByHopExtnHandler{}
+	p.hbhLayer = slayers.HopByHopExtn{}
 	p.e2eLayer = slayers.EndToEndExtnSkipper{}
 }
 
@@ -975,7 +976,7 @@ func (p *slowPathPacketProcessor) processPacket(pkt *Packet) error {
 	case slowPathRouterAlertEgress: //Traceroute
 		return p.handleSCMPTraceRouteRequest(p.pkt.egress)
 	case slowPathPolarisProbe: //Polaris
-		return p.handlePolarisProbeRequest(p.pkt.egress)
+		return p.handlePolarisProbeOption(p.pkt.egress)
 	default:
 		panic("Unsupported slow-path type")
 	}
@@ -1128,7 +1129,7 @@ func (p *scionPacketProcessor) reset() error {
 	p.mac.Reset()
 	p.cachedMac = nil
 	// Reset hbh layer
-	p.hbhLayer = slayers.HopByHopExtnHandler{}
+	p.hbhLayer = slayers.HopByHopExtn{}
 	// Reset e2e layer
 	p.e2eLayer = slayers.EndToEndExtnSkipper{}
 	return nil
@@ -1819,6 +1820,29 @@ func (p *scionPacketProcessor) handleEgressRouterAlert() disposition {
 	return pSlowPath
 }
 
+func (p *scionPacketProcessor) handlePolarisProbe() disposition {
+	// Check if hbhLayer was parsed for this packet
+	if !p.lastLayer.CanDecode().Contains(slayers.LayerTypeHopByHopExtn) {
+		return pForward
+	}
+	// Parse incoming Polaris Probe
+	hbhLayer := &slayers.HopByHopExtn{}
+	if err := hbhLayer.DecodeFromBytes(
+		p.hbhLayer.Contents,
+		gopacket.NilDecodeFeedback,
+	); err != nil {
+		return pForward
+	}
+	_, err := hbhLayer.FindOption(slayers.OptTypePolaris)
+	if err != nil {
+		return pForward
+	}
+	p.pkt.slowPathRequest = slowPathRequest{
+		typ: slowPathPolarisProbe,
+	}
+	return pSlowPath
+}
+
 func (p *scionPacketProcessor) egressRouterAlertFlag() *bool {
 	if !p.infoField.ConsDir {
 		return &p.hopField.IngressRouterAlert
@@ -1857,10 +1881,10 @@ func (p *slowPathPacketProcessor) handleSCMPTraceRouteRequest(ifID uint16) error
 	return p.packSCMP(slayers.SCMPTypeTracerouteReply, 0, &scmpP, false)
 }
 
-func (p *slowPathPacketProcessor) handlePolarisProbeRequest(ifID uint16) error {
-	if p.lastLayer.NextLayerType() != slayers.LayerTypeHopByHopExtn {
+func (p *slowPathPacketProcessor) handlePolarisProbeOption(ifID uint16) error {
+	if !p.hasPolarisProbe() {
 		log.Debug("Packet with Polaris handler, but no HBH extension")
-		return nil
+		return serrors.New("decoding Polaris HBH P-Probe option, option missing")
 	}
 	return nil
 }
@@ -1932,6 +1956,9 @@ func (p *scionPacketProcessor) process() disposition {
 		return disp
 	}
 	if disp := p.handleIngressRouterAlert(); disp != pForward {
+		return disp
+	}
+	if disp := p.handlePolarisProbe(); disp != pForward {
 		return disp
 	}
 	// Inbound: pkt destined to the local IA.
@@ -2636,13 +2663,11 @@ func (p *slowPathPacketProcessor) hasPolarisProbe() bool {
 	); err != nil {
 		return false
 	}
-	hbhOptions  := hbhLayer.Options
-	for _, o := range hbhOptions {
-		if (*o).OptType == slayers.OptTypePolaris {
-			return true
-		}
+	_, err := hbhLayer.FindOption(slayers.OptTypePolaris)
+	if err != nil {
+		return false
 	}
-	return false
+	return true
 }
 
 func (p *slowPathPacketProcessor) hasValidAuth(t time.Time) bool {
@@ -2732,7 +2757,7 @@ func nextHdr(layer gopacket.DecodingLayer) slayers.L4ProtocolType {
 		return v.NextHdr
 	case *slayers.EndToEndExtnSkipper:
 		return v.NextHdr
-	case *slayers.HopByHopExtnHandler:
+	case *slayers.HopByHopExtn:
 		return v.NextHdr
 	default:
 		return slayers.L4None
